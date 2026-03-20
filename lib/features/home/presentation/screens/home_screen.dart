@@ -64,9 +64,7 @@ class HomeScreen extends ConsumerWidget {
                           : null,
                       child: ListTile(
                         leading: Icon(
-                          item.location == StorageLocation.fridge
-                              ? Icons.kitchen
-                              : Icons.inventory_2,
+                          item.location.icon,
                           color: isExpired
                               ? colorScheme.error
                               : colorScheme.primary,
@@ -108,77 +106,163 @@ class _InventorySummaryCard extends StatelessWidget {
         final pantryCount = items
             .where((i) => i.location == StorageLocation.pantry)
             .length;
+        final freezerCount = items
+            .where((i) => i.location == StorageLocation.freezer)
+            .length;
+        final unplacedCount = items
+            .where((i) => i.location == StorageLocation.unplaced)
+            .length;
 
-        return Row(
+        return Column(
           children: [
-            Expanded(
-              child: Card(
-                color: colorScheme.primaryContainer,
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    children: [
-                      Icon(
-                        Icons.kitchen,
-                        size: 32,
-                        color: colorScheme.onPrimaryContainer,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        '$fridgeCount',
-                        style: Theme.of(context)
-                            .textTheme
-                            .headlineMedium
-                            ?.copyWith(
+            Row(
+              children: [
+                Expanded(
+                  child: Card(
+                    color: colorScheme.primaryContainer,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        children: [
+                          Icon(
+                            Icons.kitchen,
+                            size: 32,
+                            color: colorScheme.onPrimaryContainer,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            '$fridgeCount',
+                            style: Theme.of(context)
+                                .textTheme
+                                .headlineMedium
+                                ?.copyWith(
+                                  color: colorScheme.onPrimaryContainer,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                          ),
+                          Text(
+                            'In Fridge',
+                            style: TextStyle(
                               color: colorScheme.onPrimaryContainer,
-                              fontWeight: FontWeight.bold,
                             ),
+                          ),
+                        ],
                       ),
-                      Text(
-                        'In Fridge',
-                        style: TextStyle(
-                          color: colorScheme.onPrimaryContainer,
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Card(
-                color: colorScheme.secondaryContainer,
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    children: [
-                      Icon(
-                        Icons.inventory_2,
-                        size: 32,
-                        color: colorScheme.onSecondaryContainer,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        '$pantryCount',
-                        style: Theme.of(context)
-                            .textTheme
-                            .headlineMedium
-                            ?.copyWith(
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Card(
+                    color: colorScheme.secondaryContainer,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        children: [
+                          Icon(
+                            Icons.inventory_2,
+                            size: 32,
+                            color: colorScheme.onSecondaryContainer,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            '$pantryCount',
+                            style: Theme.of(context)
+                                .textTheme
+                                .headlineMedium
+                                ?.copyWith(
+                                  color: colorScheme.onSecondaryContainer,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                          ),
+                          Text(
+                            'In Pantry',
+                            style: TextStyle(
                               color: colorScheme.onSecondaryContainer,
-                              fontWeight: FontWeight.bold,
                             ),
+                          ),
+                        ],
                       ),
-                      Text(
-                        'In Pantry',
-                        style: TextStyle(
-                          color: colorScheme.onSecondaryContainer,
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ),
-              ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: Card(
+                    color: colorScheme.tertiaryContainer,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        children: [
+                          Icon(
+                            Icons.ac_unit,
+                            size: 32,
+                            color: colorScheme.onTertiaryContainer,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            '$freezerCount',
+                            style: Theme.of(context)
+                                .textTheme
+                                .headlineMedium
+                                ?.copyWith(
+                                  color: colorScheme.onTertiaryContainer,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                          ),
+                          Text(
+                            'In Freezer',
+                            style: TextStyle(
+                              color: colorScheme.onTertiaryContainer,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                if (unplacedCount > 0) ...[
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Card(
+                      color: colorScheme.surfaceContainerHighest,
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          children: [
+                            Icon(
+                              Icons.inbox,
+                              size: 32,
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              '$unplacedCount',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .headlineMedium
+                                  ?.copyWith(
+                                    color: colorScheme.onSurfaceVariant,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                            ),
+                            Text(
+                              'Unplaced',
+                              style: TextStyle(
+                                color: colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
             ),
           ],
         );

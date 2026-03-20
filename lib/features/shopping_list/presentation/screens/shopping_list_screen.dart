@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fridgeiq/core/constants/app_constants.dart';
 import 'package:fridgeiq/core/utils/id_generator.dart';
 import 'package:fridgeiq/core/widgets/empty_state_widget.dart';
+import 'package:fridgeiq/features/food_inventory/domain/entities/food_item.dart';
+import 'package:fridgeiq/features/food_inventory/domain/entities/storage_location.dart';
+import 'package:fridgeiq/features/food_inventory/presentation/providers/food_inventory_providers.dart';
 import 'package:fridgeiq/features/shopping_list/domain/entities/shopping_item.dart';
 import 'package:fridgeiq/features/shopping_list/presentation/providers/shopping_list_providers.dart';
 
@@ -161,7 +165,29 @@ class _ShoppingItemTile extends ConsumerWidget {
           leading: Checkbox(
             value: item.isChecked,
             onChanged: (_) {
+              final willBeChecked = !item.isChecked;
               ref.read(shoppingListProvider.notifier).toggleItem(item);
+              if (willBeChecked) {
+                final foodItem = FoodItem(
+                  id: IdGenerator.generate(),
+                  name: item.name,
+                  location: StorageLocation.unplaced,
+                  expirationDate: DateTime.now().add(
+                    const Duration(days: AppConstants.defaultExpirationDays),
+                  ),
+                  quantity: item.quantity,
+                  createdAt: DateTime.now(),
+                );
+                ref.read(foodInventoryProvider.notifier).addItem(foodItem);
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('${item.name} added to inventory'),
+                      duration: const Duration(seconds: 2),
+                    ),
+                  );
+                }
+              }
             },
           ),
           title: Text(

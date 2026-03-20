@@ -44,32 +44,51 @@ class FoodInventoryScreen extends ConsumerWidget {
         children: [
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Row(
-              children: [
-                _FilterChip(
-                  label: 'All',
-                  selected: selectedFilter == null,
-                  onSelected: (_) => ref
-                      .read(selectedLocationFilterProvider.notifier)
-                      .state = null,
-                ),
-                const SizedBox(width: 8),
-                _FilterChip(
-                  label: 'Fridge',
-                  selected: selectedFilter == StorageLocation.fridge,
-                  onSelected: (_) => ref
-                      .read(selectedLocationFilterProvider.notifier)
-                      .state = StorageLocation.fridge,
-                ),
-                const SizedBox(width: 8),
-                _FilterChip(
-                  label: 'Pantry',
-                  selected: selectedFilter == StorageLocation.pantry,
-                  onSelected: (_) => ref
-                      .read(selectedLocationFilterProvider.notifier)
-                      .state = StorageLocation.pantry,
-                ),
-              ],
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  _FilterChip(
+                    label: 'All',
+                    selected: selectedFilter == null,
+                    onSelected: (_) => ref
+                        .read(selectedLocationFilterProvider.notifier)
+                        .state = null,
+                  ),
+                  const SizedBox(width: 8),
+                  _FilterChip(
+                    label: 'Unplaced',
+                    selected: selectedFilter == StorageLocation.unplaced,
+                    onSelected: (_) => ref
+                        .read(selectedLocationFilterProvider.notifier)
+                        .state = StorageLocation.unplaced,
+                  ),
+                  const SizedBox(width: 8),
+                  _FilterChip(
+                    label: 'Fridge',
+                    selected: selectedFilter == StorageLocation.fridge,
+                    onSelected: (_) => ref
+                        .read(selectedLocationFilterProvider.notifier)
+                        .state = StorageLocation.fridge,
+                  ),
+                  const SizedBox(width: 8),
+                  _FilterChip(
+                    label: 'Pantry',
+                    selected: selectedFilter == StorageLocation.pantry,
+                    onSelected: (_) => ref
+                        .read(selectedLocationFilterProvider.notifier)
+                        .state = StorageLocation.pantry,
+                  ),
+                  const SizedBox(width: 8),
+                  _FilterChip(
+                    label: 'Freezer',
+                    selected: selectedFilter == StorageLocation.freezer,
+                    onSelected: (_) => ref
+                        .read(selectedLocationFilterProvider.notifier)
+                        .state = StorageLocation.freezer,
+                  ),
+                ],
+              ),
             ),
           ),
           Expanded(
