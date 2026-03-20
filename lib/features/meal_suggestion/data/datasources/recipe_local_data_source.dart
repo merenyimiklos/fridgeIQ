@@ -1,27 +1,24 @@
-import 'package:hive/hive.dart';
 import 'package:fridgeiq/core/constants/app_constants.dart';
+import 'package:fridgeiq/core/services/firebase_database_service.dart';
 import 'package:fridgeiq/features/meal_suggestion/data/models/recipe_model.dart';
 
 class RecipeLocalDataSource {
-  Box<Map>? _box;
+  final FirebaseDatabaseService _firebaseService;
 
-  Future<Box<Map>> get box async {
-    _box ??= await Hive.openBox<Map>(AppConstants.recipeBoxName);
-    return _box!;
-  }
+  RecipeLocalDataSource(this._firebaseService);
+
+  static const _collection = AppConstants.recipeBoxName;
 
   Future<List<RecipeModel>> getAllRecipes() async {
-    final b = await box;
-    return b.values.map((map) => RecipeModel.fromMap(map)).toList();
+    final data = await _firebaseService.getAll(_collection);
+    return data.values.map((map) => RecipeModel.fromMap(map)).toList();
   }
 
   Future<void> saveRecipe(RecipeModel model) async {
-    final b = await box;
-    await b.put(model.id, model.toMap());
+    await _firebaseService.put(_collection, model.id, model.toMap());
   }
 
   Future<void> deleteRecipe(String id) async {
-    final b = await box;
-    await b.delete(id);
+    await _firebaseService.delete(_collection, id);
   }
 }
