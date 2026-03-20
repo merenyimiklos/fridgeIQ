@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fridgeiq/core/widgets/empty_state_widget.dart';
 import 'package:fridgeiq/features/meal_suggestion/presentation/providers/meal_suggestion_providers.dart';
 import 'package:fridgeiq/features/meal_suggestion/presentation/widgets/add_recipe_sheet.dart';
+import 'package:fridgeiq/features/meal_suggestion/presentation/widgets/import_recipe_sheet.dart';
 import 'package:fridgeiq/features/meal_suggestion/presentation/widgets/recipe_match_card.dart';
 
 class MealSuggestionScreen extends ConsumerWidget {
@@ -16,6 +17,13 @@ class MealSuggestionScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Meal Suggestions'),
+        actions: [
+          IconButton(
+            onPressed: () => _showImportSheet(context),
+            icon: const Icon(Icons.link),
+            tooltip: 'Import from TikTok',
+          ),
+        ],
       ),
       body: Column(
         children: [
@@ -92,6 +100,15 @@ class MealSuggestionScreen extends ConsumerWidget {
       isScrollControlled: true,
       useSafeArea: true,
       builder: (context) => const AddRecipeSheet(),
+    );
+  }
+
+  void _showImportSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (context) => const ImportRecipeSheet(),
     );
   }
 }
