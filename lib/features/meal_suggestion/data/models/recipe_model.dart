@@ -1,4 +1,3 @@
-import 'package:hive/hive.dart';
 import 'package:fridgeiq/features/meal_suggestion/domain/entities/recipe.dart';
 
 class RecipeModel {

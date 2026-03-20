@@ -60,8 +60,12 @@ final recipeMatchesProvider = Provider<AsyncValue<List<RecipeMatch>>>((ref) {
         final missing = <String>[];
 
         for (final ingredient in recipe.ingredients) {
-          final normalized = ingredient.toLowerCase().trim();
-          if (availableNames.any((name) => name.contains(normalized) || normalized.contains(name))) {
+          final normalizedIngredient = ingredient.toLowerCase().trim();
+          final isAvailable = availableNames.any((name) =>
+              name == normalizedIngredient ||
+              name.split(' ').contains(normalizedIngredient) ||
+              normalizedIngredient.split(' ').any((word) => word.length > 2 && name.contains(word)));
+          if (isAvailable) {
             available.add(ingredient);
           } else {
             missing.add(ingredient);

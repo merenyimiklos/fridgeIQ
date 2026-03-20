@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fridgeiq/core/constants/app_constants.dart';
 import 'package:fridgeiq/core/utils/date_utils.dart';
 import 'package:fridgeiq/core/utils/id_generator.dart';
 import 'package:fridgeiq/features/food_inventory/domain/entities/food_item.dart';
@@ -40,7 +41,8 @@ class _AddFoodItemSheetState extends ConsumerState<AddFoodItemSheet> {
     );
     _categoryController = TextEditingController(text: item?.category ?? '');
     _selectedLocation = item?.location ?? StorageLocation.fridge;
-    _selectedDate = item?.expirationDate ?? DateTime.now().add(const Duration(days: 7));
+    _selectedDate = item?.expirationDate ??
+        DateTime.now().add(const Duration(days: AppConstants.defaultExpirationDays));
   }
 
   @override

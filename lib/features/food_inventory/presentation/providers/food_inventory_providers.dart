@@ -1,4 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fridgeiq/core/constants/app_constants.dart';
+import 'package:fridgeiq/core/utils/date_utils.dart';
 import 'package:fridgeiq/features/food_inventory/data/datasources/food_local_data_source.dart';
 import 'package:fridgeiq/features/food_inventory/data/repositories/food_inventory_repository_impl.dart';
 import 'package:fridgeiq/features/food_inventory/domain/entities/food_item.dart';
@@ -67,8 +69,11 @@ final expiringItemsProvider = Provider<AsyncValue<List<FoodItem>>>((ref) {
   final allItems = ref.watch(foodInventoryProvider);
   return allItems.whenData((items) {
     return items.where((item) {
-      final days = item.expirationDate.difference(DateTime.now()).inDays;
-      return days >= -1 && days <= 3;
+      return AppDateUtils.isExpired(item.expirationDate) ||
+          AppDateUtils.isExpiringSoon(
+            item.expirationDate,
+            warningDays: AppConstants.expirationWarningDays,
+          );
     }).toList();
   });
 });

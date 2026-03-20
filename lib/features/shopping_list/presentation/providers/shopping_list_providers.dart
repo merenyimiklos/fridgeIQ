@@ -33,6 +33,14 @@ class ShoppingListNotifier extends AsyncNotifier<List<ShoppingItem>> {
     ref.invalidateSelf();
   }
 
+  Future<void> addItems(List<ShoppingItem> items) async {
+    final repo = ref.read(shoppingListRepositoryProvider);
+    for (final item in items) {
+      await repo.addItem(item);
+    }
+    ref.invalidateSelf();
+  }
+
   Future<void> toggleItem(ShoppingItem item) async {
     final repo = ref.read(shoppingListRepositoryProvider);
     await repo.updateItem(item.copyWith(isChecked: !item.isChecked));

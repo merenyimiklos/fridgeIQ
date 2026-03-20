@@ -1,4 +1,3 @@
-import 'package:hive/hive.dart';
 import 'package:fridgeiq/features/food_inventory/domain/entities/food_item.dart';
 import 'package:fridgeiq/features/food_inventory/domain/entities/storage_location.dart';
 

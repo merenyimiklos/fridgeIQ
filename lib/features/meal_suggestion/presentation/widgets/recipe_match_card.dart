@@ -161,15 +161,15 @@ class RecipeMatchCard extends ConsumerWidget {
   }
 
   void _addMissingToShoppingList(BuildContext context, WidgetRef ref) {
-    for (final ingredient in match.missingIngredients) {
-      final item = ShoppingItem(
-        id: IdGenerator.generate(),
-        name: ingredient,
-        isChecked: false,
-        createdAt: DateTime.now(),
-      );
-      ref.read(shoppingListProvider.notifier).addItem(item);
-    }
+    final items = match.missingIngredients
+        .map((ingredient) => ShoppingItem(
+              id: IdGenerator.generate(),
+              name: ingredient,
+              isChecked: false,
+              createdAt: DateTime.now(),
+            ))
+        .toList();
+    ref.read(shoppingListProvider.notifier).addItems(items);
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
