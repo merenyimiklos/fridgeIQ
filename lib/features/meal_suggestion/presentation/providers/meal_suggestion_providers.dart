@@ -11,7 +11,7 @@ import 'package:fridgeiq/features/meal_suggestion/domain/repositories/recipe_rep
 import 'package:fridgeiq/features/meal_suggestion/domain/repositories/review_repository.dart';
 
 final recipeLocalDataSourceProvider = Provider<RecipeLocalDataSource>((ref) {
-  return RecipeLocalDataSource();
+  return RecipeLocalDataSource(ref.watch(firebaseDatabaseServiceProvider));
 });
 
 final recipeRepositoryProvider = Provider<RecipeRepository>((ref) {
@@ -105,7 +105,7 @@ final recipeMatchesProvider = Provider<AsyncValue<List<RecipeMatch>>>((ref) {
 // Review providers
 
 final reviewLocalDataSourceProvider = Provider<ReviewLocalDataSource>((ref) {
-  return ReviewLocalDataSource();
+  return ReviewLocalDataSource(ref.watch(firebaseDatabaseServiceProvider));
 });
 
 final reviewRepositoryProvider = Provider<ReviewRepository>((ref) {
