@@ -8,4 +8,6 @@ class AppConstants {
   static const String recipeBoxName = 'recipes';
   static const String shoppingBoxName = 'shopping_items';
   static const String reviewBoxName = 'recipe_reviews';
+  static const String settingsBoxName = 'settings';
+  static const String geminiApiKeySettingKey = 'gemini_api_key';
 }
