@@ -251,13 +251,14 @@ class _ImportRecipeSheetState extends ConsumerState<ImportRecipeSheet> {
       mealType: mealType,
       ingredients: ingredients,
       instructions: instructions,
-      servings: 2,
-      prepTimeMinutes: 30,
     );
   }
 }
 
 class _ParsedRecipe {
+  static const int defaultServings = 2;
+  static const int defaultPrepTimeMinutes = 30;
+
   final String name;
   final String mealType;
   final List<String> ingredients;
@@ -270,7 +271,7 @@ class _ParsedRecipe {
     required this.mealType,
     required this.ingredients,
     required this.instructions,
-    required this.servings,
-    required this.prepTimeMinutes,
+    this.servings = defaultServings,
+    this.prepTimeMinutes = defaultPrepTimeMinutes,
   });
 }

@@ -101,7 +101,7 @@ class RecipeMatchCard extends ConsumerWidget {
               data: (reviews) {
                 if (reviews.isEmpty) return const SizedBox.shrink();
                 final avgRating =
-                    reviews.fold<int>(0, (sum, r) => sum + r.rating) /
+                    reviews.fold<double>(0.0, (sum, r) => sum + r.rating) /
                         reviews.length;
                 return Padding(
                   padding: const EdgeInsets.only(top: 4),
