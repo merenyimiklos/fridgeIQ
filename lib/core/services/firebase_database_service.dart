@@ -16,6 +16,7 @@ class FirebaseDatabaseService {
     final response = await _client.get(
       Uri.parse('$_baseUrl/$collection.json'),
     );
+    _checkResponse(response);
     final data = json.decode(response.body);
     if (data == null) return {};
     final map = Map<String, dynamic>.from(data as Map);
@@ -29,6 +30,7 @@ class FirebaseDatabaseService {
     final response = await _client.get(
       Uri.parse('$_baseUrl/$collection/$id.json'),
     );
+    _checkResponse(response);
     final data = json.decode(response.body);
     if (data == null) return null;
     return Map<String, dynamic>.from(data as Map);
@@ -40,21 +42,41 @@ class FirebaseDatabaseService {
     String id,
     Map<String, dynamic> data,
   ) async {
-    await _client.put(
+    final response = await _client.put(
       Uri.parse('$_baseUrl/$collection/$id.json'),
+      headers: {'Content-Type': 'application/json'},
       body: json.encode(data),
     );
+    _checkResponse(response);
   }
 
   /// Deletes an item from a collection.
   Future<void> delete(String collection, String id) async {
-    await _client.delete(
+    final response = await _client.delete(
       Uri.parse('$_baseUrl/$collection/$id.json'),
     );
+    _checkResponse(response);
   }
 
-  /// Deletes multiple items from a collection.
+  /// Deletes multiple items from a collection using a single batch update.
   Future<void> deleteAll(String collection, List<String> ids) async {
-    await Future.wait(ids.map((id) => delete(collection, id)));
+    if (ids.isEmpty) return;
+    final updates = <String, dynamic>{
+      for (final id in ids) '$collection/$id': null,
+    };
+    final response = await _client.patch(
+      Uri.parse('$_baseUrl/.json'),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode(updates),
+    );
+    _checkResponse(response);
+  }
+
+  void _checkResponse(http.Response response) {
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception(
+        'Firebase request failed [${response.statusCode}]: ${response.body}',
+      );
+    }
   }
 }
