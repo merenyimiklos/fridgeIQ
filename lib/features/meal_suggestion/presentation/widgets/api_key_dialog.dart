@@ -19,6 +19,7 @@ class ApiKeyDialog extends StatefulWidget {
 class _ApiKeyDialogState extends State<ApiKeyDialog> {
   final _controller = TextEditingController();
   bool _obscure = true;
+  String? _error;
 
   @override
   void initState() {
@@ -64,6 +65,7 @@ class _ApiKeyDialogState extends State<ApiKeyDialog> {
             decoration: InputDecoration(
               labelText: 'API Key',
               prefixIcon: const Icon(Icons.key),
+              errorText: _error,
               suffixIcon: IconButton(
                 icon: Icon(_obscure ? Icons.visibility : Icons.visibility_off),
                 onPressed: () => setState(() => _obscure = !_obscure),
@@ -80,7 +82,10 @@ class _ApiKeyDialogState extends State<ApiKeyDialog> {
         FilledButton(
           onPressed: () {
             final key = _controller.text.trim();
-            if (key.isEmpty) return;
+            if (key.isEmpty) {
+              setState(() => _error = 'Please enter an API key');
+              return;
+            }
             final box = Hive.box<String>(AppConstants.settingsBoxName);
             box.put(AppConstants.geminiApiKeySettingKey, key);
             Navigator.pop(context, key);

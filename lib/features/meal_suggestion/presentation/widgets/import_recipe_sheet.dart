@@ -36,7 +36,8 @@ class _ImportRecipeSheetState extends ConsumerState<ImportRecipeSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final hasApiKey = _getApiKey() != null && _getApiKey()!.isNotEmpty;
+    final apiKey = _getApiKey();
+    final hasApiKey = apiKey != null && apiKey.isNotEmpty;
 
     return Padding(
       padding: EdgeInsets.only(
