@@ -1,10 +1,14 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fridgeiq/features/food_inventory/presentation/providers/food_inventory_providers.dart';
 import 'package:fridgeiq/features/meal_suggestion/data/datasources/recipe_local_data_source.dart';
+import 'package:fridgeiq/features/meal_suggestion/data/datasources/review_local_data_source.dart';
 import 'package:fridgeiq/features/meal_suggestion/data/repositories/recipe_repository_impl.dart';
+import 'package:fridgeiq/features/meal_suggestion/data/repositories/review_repository_impl.dart';
 import 'package:fridgeiq/features/meal_suggestion/domain/entities/recipe.dart';
 import 'package:fridgeiq/features/meal_suggestion/domain/entities/recipe_match.dart';
+import 'package:fridgeiq/features/meal_suggestion/domain/entities/recipe_review.dart';
 import 'package:fridgeiq/features/meal_suggestion/domain/repositories/recipe_repository.dart';
+import 'package:fridgeiq/features/meal_suggestion/domain/repositories/review_repository.dart';
 
 final recipeLocalDataSourceProvider = Provider<RecipeLocalDataSource>((ref) {
   return RecipeLocalDataSource();
@@ -95,5 +99,53 @@ final recipeMatchesProvider = Provider<AsyncValue<List<RecipeMatch>>>((ref) {
     }),
     loading: () => const AsyncLoading(),
     error: (e, s) => AsyncError(e, s),
+  );
+});
+
+// Review providers
+
+final reviewLocalDataSourceProvider = Provider<ReviewLocalDataSource>((ref) {
+  return ReviewLocalDataSource();
+});
+
+final reviewRepositoryProvider = Provider<ReviewRepository>((ref) {
+  return ReviewRepositoryImpl(ref.watch(reviewLocalDataSourceProvider));
+});
+
+final reviewsProvider =
+    AsyncNotifierProvider<ReviewsNotifier, List<RecipeReview>>(
+        ReviewsNotifier.new);
+
+class ReviewsNotifier extends AsyncNotifier<List<RecipeReview>> {
+  @override
+  Future<List<RecipeReview>> build() async {
+    return ref.watch(reviewRepositoryProvider).getAllReviews();
+  }
+
+  Future<void> addReview(RecipeReview review) async {
+    final repo = ref.read(reviewRepositoryProvider);
+    await repo.addReview(review);
+    ref.invalidateSelf();
+  }
+
+  Future<void> updateReview(RecipeReview review) async {
+    final repo = ref.read(reviewRepositoryProvider);
+    await repo.updateReview(review);
+    ref.invalidateSelf();
+  }
+
+  Future<void> deleteReview(String id) async {
+    final repo = ref.read(reviewRepositoryProvider);
+    await repo.deleteReview(id);
+    ref.invalidateSelf();
+  }
+}
+
+final recipeReviewsProvider =
+    Provider.family<AsyncValue<List<RecipeReview>>, String>((ref, recipeId) {
+  final allReviews = ref.watch(reviewsProvider);
+  return allReviews.whenData(
+    (reviews) => reviews.where((r) => r.recipeId == recipeId).toList()
+      ..sort((a, b) => b.createdAt.compareTo(a.createdAt)),
   );
 });

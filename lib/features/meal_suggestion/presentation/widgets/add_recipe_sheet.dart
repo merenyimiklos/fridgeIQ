@@ -5,9 +5,10 @@ import 'package:fridgeiq/features/meal_suggestion/domain/entities/recipe.dart';
 import 'package:fridgeiq/features/meal_suggestion/presentation/providers/meal_suggestion_providers.dart';
 
 class AddRecipeSheet extends ConsumerStatefulWidget {
-  const AddRecipeSheet({super.key, this.editRecipe});
+  const AddRecipeSheet({super.key, this.editRecipe, this.isNewFromImport = false});
 
   final Recipe? editRecipe;
+  final bool isNewFromImport;
 
   @override
   ConsumerState<AddRecipeSheet> createState() => _AddRecipeSheetState();
@@ -23,7 +24,7 @@ class _AddRecipeSheetState extends ConsumerState<AddRecipeSheet> {
   final List<String> _ingredients = [];
   final TextEditingController _ingredientController = TextEditingController();
 
-  bool get _isEditing => widget.editRecipe != null;
+  bool get _isEditing => widget.editRecipe != null && !widget.isNewFromImport;
 
   @override
   void initState() {
