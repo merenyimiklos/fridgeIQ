@@ -20,6 +20,7 @@ class FoodItemTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final isExpired = AppDateUtils.isExpired(item.expirationDate);
+    final isUnplaced = !item.location.isPlaced;
 
     return Dismissible(
       key: ValueKey(item.id),
@@ -37,6 +38,9 @@ class FoodItemTile extends StatelessWidget {
       ),
       child: Card(
         margin: const EdgeInsets.symmetric(vertical: 4),
+        color: isUnplaced
+            ? colorScheme.tertiaryContainer.withOpacity(0.3)
+            : null,
         child: InkWell(
           onTap: onEdit,
           borderRadius: BorderRadius.circular(12),
@@ -50,16 +54,18 @@ class FoodItemTile extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: isExpired
                         ? colorScheme.errorContainer
-                        : colorScheme.primaryContainer,
+                        : isUnplaced
+                            ? colorScheme.tertiaryContainer
+                            : colorScheme.primaryContainer,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
-                    item.location == StorageLocation.fridge
-                        ? Icons.kitchen
-                        : Icons.inventory_2,
+                    item.location.icon,
                     color: isExpired
                         ? colorScheme.onErrorContainer
-                        : colorScheme.onPrimaryContainer,
+                        : isUnplaced
+                            ? colorScheme.onTertiaryContainer
+                            : colorScheme.onPrimaryContainer,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -82,15 +88,26 @@ class FoodItemTile extends StatelessWidget {
                           Icon(
                             Icons.place,
                             size: 14,
-                            color: colorScheme.outline,
+                            color: isUnplaced
+                                ? colorScheme.tertiary
+                                : colorScheme.outline,
                           ),
                           const SizedBox(width: 2),
                           Text(
-                            item.location.displayName,
+                            isUnplaced
+                                ? 'Tap to assign location'
+                                : item.location.displayName,
                             style: Theme.of(context)
                                 .textTheme
                                 .bodySmall
-                                ?.copyWith(color: colorScheme.outline),
+                                ?.copyWith(
+                                  color: isUnplaced
+                                      ? colorScheme.tertiary
+                                      : colorScheme.outline,
+                                  fontStyle: isUnplaced
+                                      ? FontStyle.italic
+                                      : null,
+                                ),
                           ),
                           if (item.category != null) ...[
                             const SizedBox(width: 8),
