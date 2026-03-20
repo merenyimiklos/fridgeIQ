@@ -21,7 +21,71 @@ class RecipeMatchCard extends ConsumerWidget {
     final percentage = (match.matchPercentage * 100).round();
     final reviewsAsync = ref.watch(recipeReviewsProvider(match.recipeId));
 
-    return Card(
+    return Dismissible(
+      key: ValueKey(match.recipeId),
+      background: Container(
+        alignment: Alignment.centerLeft,
+        padding: const EdgeInsets.only(left: 24),
+        margin: const EdgeInsets.symmetric(vertical: 6),
+        decoration: BoxDecoration(
+          color: colorScheme.error,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.delete, color: colorScheme.onError),
+            const SizedBox(width: 8),
+            Text(
+              'Delete',
+              style: TextStyle(
+                color: colorScheme.onError,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      ),
+      secondaryBackground: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 24),
+        margin: const EdgeInsets.symmetric(vertical: 6),
+        decoration: BoxDecoration(
+          color: colorScheme.primary,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            Text(
+              'Edit',
+              style: TextStyle(
+                color: colorScheme.onPrimary,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Icon(Icons.edit, color: colorScheme.onPrimary),
+          ],
+        ),
+      ),
+      confirmDismiss: (direction) async {
+        if (direction == DismissDirection.startToEnd) {
+          return await _showDeleteConfirmation(context);
+        } else {
+          _editRecipe(context, ref);
+          return false;
+        }
+      },
+      onDismissed: (_) {
+        ref.read(recipesProvider.notifier).deleteRecipe(match.recipeId);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('"${match.recipeName}" deleted'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      },
+      child: Card(
       margin: const EdgeInsets.symmetric(vertical: 6),
       child: ExpansionTile(
         leading: Stack(
@@ -215,7 +279,34 @@ class RecipeMatchCard extends ConsumerWidget {
           ),
         ],
       ),
+    ),
     );
+  }
+
+  Future<bool> _showDeleteConfirmation(BuildContext context) async {
+    return await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Recipe'),
+        content: Text(
+          'Are you sure you want to delete "${match.recipeName}"? This will also delete all reviews.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    ) ??
+        false;
   }
 
   Widget _buildPopupMenu(BuildContext context, WidgetRef ref) {
