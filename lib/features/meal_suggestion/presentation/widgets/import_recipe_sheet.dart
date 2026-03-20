@@ -2,11 +2,14 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hive/hive.dart';
 import 'package:http/http.dart' as http;
+import 'package:fridgeiq/core/constants/app_constants.dart';
 import 'package:fridgeiq/core/utils/id_generator.dart';
+import 'package:fridgeiq/features/meal_suggestion/data/datasources/gemini_recipe_service.dart';
 import 'package:fridgeiq/features/meal_suggestion/domain/entities/recipe.dart';
-import 'package:fridgeiq/features/meal_suggestion/presentation/providers/meal_suggestion_providers.dart';
 import 'package:fridgeiq/features/meal_suggestion/presentation/widgets/add_recipe_sheet.dart';
+import 'package:fridgeiq/features/meal_suggestion/presentation/widgets/api_key_dialog.dart';
 
 class ImportRecipeSheet extends ConsumerStatefulWidget {
   const ImportRecipeSheet({super.key});
@@ -26,8 +29,16 @@ class _ImportRecipeSheetState extends ConsumerState<ImportRecipeSheet> {
     super.dispose();
   }
 
+  String? _getApiKey() {
+    final box = Hive.box<String>(AppConstants.settingsBoxName);
+    return box.get(AppConstants.geminiApiKeySettingKey);
+  }
+
   @override
   Widget build(BuildContext context) {
+    final apiKey = _getApiKey();
+    final hasApiKey = apiKey != null && apiKey.isNotEmpty;
+
     return Padding(
       padding: EdgeInsets.only(
         left: 24,
@@ -47,13 +58,39 @@ class _ImportRecipeSheetState extends ConsumerState<ImportRecipeSheet> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Paste a TikTok video link and we\'ll try to extract the recipe from the description.',
+              hasApiKey
+                  ? 'Paste a TikTok video link and Gemini AI will extract the recipe with ingredients.'
+                  : 'Set up your Gemini API key to enable AI-powered recipe extraction from TikTok videos.',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: Theme.of(context).colorScheme.outline,
                   ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
+            if (!hasApiKey)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: OutlinedButton.icon(
+                  onPressed: () async {
+                    await ApiKeyDialog.show(context);
+                    setState(() {});
+                  },
+                  icon: const Icon(Icons.key),
+                  label: const Text('Set Gemini API Key'),
+                ),
+              ),
+            if (hasApiKey)
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton.icon(
+                  onPressed: () async {
+                    await ApiKeyDialog.show(context);
+                    setState(() {});
+                  },
+                  icon: const Icon(Icons.key, size: 16),
+                  label: const Text('Change API Key'),
+                ),
+              ),
             TextFormField(
               controller: _urlController,
               decoration: const InputDecoration(
@@ -108,6 +145,7 @@ class _ImportRecipeSheetState extends ConsumerState<ImportRecipeSheet> {
     });
 
     try {
+      // Step 1: Fetch video description from TikTok oEmbed API
       final oEmbedUrl = Uri.parse(
           'https://www.tiktok.com/oembed?url=${Uri.encodeComponent(url)}');
       final response = await http.get(oEmbedUrl);
@@ -132,7 +170,21 @@ class _ImportRecipeSheetState extends ConsumerState<ImportRecipeSheet> {
         return;
       }
 
-      final parsed = _parseRecipeFromText(title);
+      // Step 2: Try AI extraction if API key is set, otherwise fallback
+      final apiKey = _getApiKey();
+      ParsedRecipeData parsed;
+
+      if (apiKey != null && apiKey.isNotEmpty) {
+        try {
+          final geminiService = GeminiRecipeService(apiKey);
+          parsed = await geminiService.extractRecipe(title);
+        } catch (e) {
+          // Fallback to regex parsing if AI fails
+          parsed = _parseRecipeFromText(title);
+        }
+      } else {
+        parsed = _parseRecipeFromText(title);
+      }
 
       if (!mounted) return;
       Navigator.pop(context);
@@ -163,7 +215,8 @@ class _ImportRecipeSheetState extends ConsumerState<ImportRecipeSheet> {
     }
   }
 
-  _ParsedRecipe _parseRecipeFromText(String text) {
+  /// Fallback regex-based recipe parsing when Gemini AI is not available.
+  ParsedRecipeData _parseRecipeFromText(String text) {
     String name = '';
     String mealType = 'dinner';
     final ingredients = <String>[];
@@ -246,32 +299,11 @@ class _ImportRecipeSheetState extends ConsumerState<ImportRecipeSheet> {
       }
     }
 
-    return _ParsedRecipe(
+    return ParsedRecipeData(
       name: name,
       mealType: mealType,
       ingredients: ingredients,
       instructions: instructions,
     );
   }
-}
-
-class _ParsedRecipe {
-  static const int defaultServings = 2;
-  static const int defaultPrepTimeMinutes = 30;
-
-  final String name;
-  final String mealType;
-  final List<String> ingredients;
-  final String instructions;
-  final int servings;
-  final int prepTimeMinutes;
-
-  const _ParsedRecipe({
-    required this.name,
-    required this.mealType,
-    required this.ingredients,
-    required this.instructions,
-    this.servings = defaultServings,
-    this.prepTimeMinutes = defaultPrepTimeMinutes,
-  });
 }
