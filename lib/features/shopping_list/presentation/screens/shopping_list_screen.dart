@@ -179,12 +179,14 @@ class _ShoppingItemTile extends ConsumerWidget {
                   createdAt: DateTime.now(),
                 );
                 ref.read(foodInventoryProvider.notifier).addItem(foodItem);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('${item.name} added to inventory'),
-                    duration: const Duration(seconds: 2),
-                  ),
-                );
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('${item.name} added to inventory'),
+                      duration: const Duration(seconds: 2),
+                    ),
+                  );
+                }
               }
             },
           ),

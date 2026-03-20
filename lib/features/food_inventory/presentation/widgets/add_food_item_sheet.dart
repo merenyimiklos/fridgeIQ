@@ -40,8 +40,8 @@ class _AddFoodItemSheetState extends ConsumerState<AddFoodItemSheet> {
       text: (item?.quantity ?? 1).toString(),
     );
     _categoryController = TextEditingController(text: item?.category ?? '');
-    _selectedLocation = (item?.location != null && item!.location.isPlaced)
-        ? item.location
+    _selectedLocation = (item?.location?.isPlaced ?? false)
+        ? item!.location
         : StorageLocation.fridge;
     _selectedDate = item?.expirationDate ??
         DateTime.now().add(const Duration(days: AppConstants.defaultExpirationDays));
