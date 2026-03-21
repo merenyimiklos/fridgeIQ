@@ -40,46 +40,39 @@ class IngredientParser {
       return const ParsedIngredient(name: '');
     }
 
-    // Pattern: optional quantity (number), optional unit, then the name
-    // Examples: "2 kg chicken", "3 eggs", "1.5 l milk", "salt"
-    final regex = RegExp(
-      r'^(\d+(?:[.,]\d+)?)\s*'  // quantity (e.g., "2", "1.5", "0,5")
-      r'([a-záéíóöőúüűA-ZÁÉÍÓÖŐÚÜŰ]+)?\s*'  // optional unit
-      r'(.+)?$',  // remaining name
-    );
+    // Try to extract a leading number (e.g., "2", "1.5", "0,5")
+    final numberRegex = RegExp(r'^(\d+(?:[.,]\d+)?)\s*(.*)$');
+    final numberMatch = numberRegex.firstMatch(trimmed);
 
-    final match = regex.firstMatch(trimmed);
-
-    if (match == null) {
+    if (numberMatch == null) {
       // No number found, entire string is the name
       return ParsedIngredient(name: trimmed);
     }
 
-    final quantityStr = match.group(1)!.replaceAll(',', '.');
+    final quantityStr = numberMatch.group(1)!.replaceAll(',', '.');
     final quantity = double.tryParse(quantityStr) ?? 1;
-    final possibleUnit = match.group(2)?.toLowerCase();
-    final remainingName = match.group(3)?.trim();
+    final remainder = numberMatch.group(2)?.trim() ?? '';
 
-    if (possibleUnit != null && _knownUnits.contains(possibleUnit)) {
-      // We have a valid unit
+    if (remainder.isEmpty) {
+      return ParsedIngredient(name: trimmed, quantity: quantity);
+    }
+
+    // Check if the first word of the remainder is a known unit
+    final words = remainder.split(RegExp(r'\s+'));
+    final firstWord = words.first.toLowerCase();
+
+    if (_knownUnits.contains(firstWord)) {
+      // The first word is a unit, the rest is the ingredient name
+      final name = words.length > 1 ? words.sublist(1).join(' ') : firstWord;
       return ParsedIngredient(
-        name: remainingName?.isNotEmpty == true ? remainingName! : possibleUnit,
+        name: name,
         quantity: quantity,
-        unit: possibleUnit,
-      );
-    } else if (possibleUnit != null) {
-      // The "unit" is actually part of the name (e.g., "3 eggs" → possibleUnit="eggs")
-      final fullName = remainingName?.isNotEmpty == true
-          ? '$possibleUnit $remainingName'
-          : possibleUnit;
-      return ParsedIngredient(
-        name: fullName,
-        quantity: quantity,
+        unit: firstWord,
       );
     } else {
-      // Only a number and a name
+      // No known unit, the entire remainder is the ingredient name
       return ParsedIngredient(
-        name: remainingName ?? trimmed,
+        name: remainder,
         quantity: quantity,
       );
     }

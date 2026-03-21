@@ -117,6 +117,7 @@ class ShoppingListScreen extends ConsumerWidget {
                       ),
                       items: const [
                         DropdownMenuItem(value: null, child: Text('pcs')),
+                        DropdownMenuItem(value: 'db', child: Text('db')),
                         DropdownMenuItem(value: 'kg', child: Text('kg')),
                         DropdownMenuItem(value: 'g', child: Text('g')),
                         DropdownMenuItem(value: 'dkg', child: Text('dkg')),
@@ -255,11 +256,13 @@ class _ShoppingItemTile extends ConsumerWidget {
             ),
           ),
           subtitle: item.note != null ? Text(item.note!) : null,
-          trailing: Chip(
-            label: Text(IngredientParser.formatQuantity(
-              item.quantity, item.unit,
-            )),
-          ),
+          trailing: (item.unit != null || item.quantity != 1)
+              ? Chip(
+                  label: Text(IngredientParser.formatQuantity(
+                    item.quantity, item.unit,
+                  )),
+                )
+              : null,
         ),
       ),
     );

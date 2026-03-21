@@ -44,8 +44,8 @@ class _AddFoodItemSheetState extends ConsumerState<AddFoodItemSheet> {
           : qty.toString(),
     );
     _categoryController = TextEditingController(text: item?.category ?? '');
-    _selectedLocation = (item?.location.isPlaced ?? false)
-        ? item!.location
+    _selectedLocation = (item != null && item.location.isPlaced)
+        ? item.location
         : StorageLocation.fridge;
     _selectedDate = item?.expirationDate ??
         DateTime.now().add(const Duration(days: AppConstants.defaultExpirationDays));
@@ -139,6 +139,7 @@ class _AddFoodItemSheetState extends ConsumerState<AddFoodItemSheet> {
                       ),
                       items: const [
                         DropdownMenuItem(value: null, child: Text('pcs')),
+                        DropdownMenuItem(value: 'db', child: Text('db')),
                         DropdownMenuItem(value: 'kg', child: Text('kg')),
                         DropdownMenuItem(value: 'g', child: Text('g')),
                         DropdownMenuItem(value: 'dkg', child: Text('dkg')),
