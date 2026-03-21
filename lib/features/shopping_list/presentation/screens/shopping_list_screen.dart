@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fridgeiq/core/constants/app_constants.dart';
 import 'package:fridgeiq/core/utils/id_generator.dart';
+import 'package:fridgeiq/core/utils/ingredient_parser.dart';
 import 'package:fridgeiq/core/widgets/empty_state_widget.dart';
 import 'package:fridgeiq/features/food_inventory/domain/entities/food_item.dart';
 import 'package:fridgeiq/features/food_inventory/domain/entities/storage_location.dart';
@@ -66,43 +67,98 @@ class ShoppingListScreen extends ConsumerWidget {
   }
 
   void _showAddItemDialog(BuildContext context, WidgetRef ref) {
-    final controller = TextEditingController();
+    final nameController = TextEditingController();
+    final quantityController = TextEditingController(text: '1');
+    String? selectedUnit;
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Add Shopping Item'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          decoration: const InputDecoration(
-            labelText: 'Item name',
-            hintText: 'e.g., Milk, Bread, Eggs...',
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Add Shopping Item'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameController,
+                autofocus: true,
+                decoration: const InputDecoration(
+                  labelText: 'Item name',
+                  hintText: 'e.g., Milk, Bread, Eggs...',
+                ),
+                textCapitalization: TextCapitalization.sentences,
+                onSubmitted: (_) {
+                  _addItem(context, ref, nameController.text,
+                      quantityController.text, selectedUnit);
+                },
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: quantityController,
+                      decoration: const InputDecoration(
+                        labelText: 'Quantity',
+                        prefixIcon: Icon(Icons.numbers),
+                      ),
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: DropdownButtonFormField<String?>(
+                      value: selectedUnit,
+                      decoration: const InputDecoration(
+                        labelText: 'Unit',
+                        prefixIcon: Icon(Icons.straighten),
+                      ),
+                      items: const [
+                        DropdownMenuItem(value: null, child: Text('pcs')),
+                        DropdownMenuItem(value: 'kg', child: Text('kg')),
+                        DropdownMenuItem(value: 'g', child: Text('g')),
+                        DropdownMenuItem(value: 'dkg', child: Text('dkg')),
+                        DropdownMenuItem(value: 'l', child: Text('l')),
+                        DropdownMenuItem(value: 'dl', child: Text('dl')),
+                        DropdownMenuItem(value: 'ml', child: Text('ml')),
+                      ],
+                      onChanged: (value) {
+                        setDialogState(() => selectedUnit = value);
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
-          textCapitalization: TextCapitalization.sentences,
-          onSubmitted: (_) {
-            _addItem(context, ref, controller.text);
-          },
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => _addItem(context, ref, nameController.text,
+                  quantityController.text, selectedUnit),
+              child: const Text('Add'),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () => _addItem(context, ref, controller.text),
-            child: const Text('Add'),
-          ),
-        ],
       ),
     );
   }
 
-  void _addItem(BuildContext context, WidgetRef ref, String name) {
+  void _addItem(BuildContext context, WidgetRef ref, String name,
+      String quantityText, String? unit) {
     if (name.trim().isEmpty) return;
+    final quantity = double.tryParse(quantityText) ?? 1;
     final item = ShoppingItem(
       id: IdGenerator.generate(),
       name: name.trim(),
       isChecked: false,
+      quantity: quantity,
+      unit: unit,
       createdAt: DateTime.now(),
     );
     ref.read(shoppingListProvider.notifier).addItem(item);
@@ -176,6 +232,7 @@ class _ShoppingItemTile extends ConsumerWidget {
                     const Duration(days: AppConstants.defaultExpirationDays),
                   ),
                   quantity: item.quantity,
+                  unit: item.unit,
                   createdAt: DateTime.now(),
                 );
                 ref.read(foodInventoryProvider.notifier).addItem(foodItem);
@@ -198,9 +255,11 @@ class _ShoppingItemTile extends ConsumerWidget {
             ),
           ),
           subtitle: item.note != null ? Text(item.note!) : null,
-          trailing: item.quantity > 1
-              ? Chip(label: Text('×${item.quantity}'))
-              : null,
+          trailing: Chip(
+            label: Text(IngredientParser.formatQuantity(
+              item.quantity, item.unit,
+            )),
+          ),
         ),
       ),
     );

@@ -2,10 +2,37 @@ import 'dart:convert';
 
 import 'package:google_generative_ai/google_generative_ai.dart';
 
+class ParsedRecipeIngredient {
+  final String name;
+  final double quantity;
+  final String? unit;
+
+  const ParsedRecipeIngredient({
+    required this.name,
+    this.quantity = 1,
+    this.unit,
+  });
+
+  /// Formats the ingredient for display (e.g., "2 kg chicken breast").
+  String get displayString {
+    final qtyStr = quantity == quantity.roundToDouble()
+        ? quantity.toInt().toString()
+        : quantity.toStringAsFixed(1);
+    if (unit != null && unit!.isNotEmpty) {
+      return '$qtyStr $unit $name';
+    }
+    if (quantity != 1) {
+      return '$qtyStr $name';
+    }
+    return name;
+  }
+}
+
 class ParsedRecipeData {
   final String name;
   final String mealType;
   final List<String> ingredients;
+  final List<ParsedRecipeIngredient> parsedIngredients;
   final String instructions;
   final int servings;
   final int prepTimeMinutes;
@@ -14,6 +41,7 @@ class ParsedRecipeData {
     required this.name,
     required this.mealType,
     required this.ingredients,
+    this.parsedIngredients = const [],
     required this.instructions,
     this.servings = 2,
     this.prepTimeMinutes = 30,
@@ -42,15 +70,20 @@ $videoDescription
 """
 
 Respond ONLY with a valid JSON object in this exact format (no markdown, no code blocks, no extra text):
-{"name":"Recipe Name","mealType":"lunch or dinner","ingredients":["ingredient 1","ingredient 2"],"instructions":"Step by step instructions","servings":2,"prepTimeMinutes":30}
+{"name":"Recipe Name","mealType":"lunch or dinner","ingredients":[{"name":"ingredient name","quantity":2,"unit":"kg"},{"name":"egg","quantity":3,"unit":null}],"instructions":"Step by step instructions","servings":2,"prepTimeMinutes":30}
 
 Rules:
 - "name": A clear, concise recipe name
 - "mealType": Either "lunch" or "dinner" based on the dish type
-- "ingredients": A list of ingredients with quantities (e.g. "2 cups flour", "1 tbsp olive oil")
+- "ingredients": A list of ingredient objects, each with:
+  - "name": The ingredient name only (e.g. "chicken breast", "flour", "egg")
+  - "quantity": A number for the amount (e.g. 2, 0.5, 1)
+  - "unit": The unit of measurement (e.g. "kg", "g", "l", "dl", "db", "cups", "tbsp", "tsp") or null if it's just a count
 - "instructions": Clear step-by-step cooking instructions
 - "servings": Number of servings (integer)
 - "prepTimeMinutes": Estimated total preparation and cooking time in minutes (integer)
+
+Important: Each ingredient MUST be a separate object. Do NOT put quantities or units in the ingredient name. Extract them into separate fields.
 ''';
 
     final response = await model.generateContent([Content.text(prompt)]);
@@ -87,10 +120,33 @@ Rules:
     }
 
     final rawIngredients = json['ingredients'] as List<dynamic>? ?? [];
-    final ingredients = rawIngredients
-        .map((e) => (e as String).trim())
-        .where((e) => e.isNotEmpty)
-        .toList();
+    final parsedIngredients = <ParsedRecipeIngredient>[];
+    final ingredientStrings = <String>[];
+
+    for (final item in rawIngredients) {
+      if (item is Map<String, dynamic>) {
+        // Structured ingredient object
+        final ingredientName = (item['name'] as String?)?.trim() ?? '';
+        if (ingredientName.isEmpty) continue;
+        final qty = (item['quantity'] as num?)?.toDouble() ?? 1;
+        final unit = item['unit'] as String?;
+
+        final parsed = ParsedRecipeIngredient(
+          name: ingredientName,
+          quantity: qty,
+          unit: unit,
+        );
+        parsedIngredients.add(parsed);
+        ingredientStrings.add(parsed.displayString);
+      } else if (item is String) {
+        // Fallback: plain string ingredient
+        final trimmed = item.trim();
+        if (trimmed.isNotEmpty) {
+          ingredientStrings.add(trimmed);
+          parsedIngredients.add(ParsedRecipeIngredient(name: trimmed));
+        }
+      }
+    }
 
     final instructions =
         (json['instructions'] as String?)?.trim() ?? '';
@@ -101,7 +157,8 @@ Rules:
     return ParsedRecipeData(
       name: name,
       mealType: mealType,
-      ingredients: ingredients,
+      ingredients: ingredientStrings,
+      parsedIngredients: parsedIngredients,
       instructions: instructions,
       servings: servings,
       prepTimeMinutes: prepTimeMinutes,

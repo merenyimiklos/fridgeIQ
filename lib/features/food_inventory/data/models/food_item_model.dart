@@ -7,7 +7,8 @@ class FoodItemModel {
   final String? barcode;
   final int locationIndex;
   final DateTime expirationDate;
-  final int quantity;
+  final double quantity;
+  final String? unit;
   final String? category;
   final DateTime createdAt;
 
@@ -18,6 +19,7 @@ class FoodItemModel {
     required this.locationIndex,
     required this.expirationDate,
     this.quantity = 1,
+    this.unit,
     this.category,
     required this.createdAt,
   });
@@ -30,6 +32,7 @@ class FoodItemModel {
       locationIndex: entity.location.index,
       expirationDate: entity.expirationDate,
       quantity: entity.quantity,
+      unit: entity.unit,
       category: entity.category,
       createdAt: entity.createdAt,
     );
@@ -43,6 +46,7 @@ class FoodItemModel {
       location: StorageLocation.values[locationIndex],
       expirationDate: expirationDate,
       quantity: quantity,
+      unit: unit,
       category: category,
       createdAt: createdAt,
     );
@@ -56,6 +60,7 @@ class FoodItemModel {
       'locationIndex': locationIndex,
       'expirationDate': expirationDate.toIso8601String(),
       'quantity': quantity,
+      'unit': unit,
       'category': category,
       'createdAt': createdAt.toIso8601String(),
     };
@@ -68,7 +73,8 @@ class FoodItemModel {
       barcode: map['barcode'] as String?,
       locationIndex: map['locationIndex'] as int,
       expirationDate: DateTime.parse(map['expirationDate'] as String),
-      quantity: map['quantity'] as int? ?? 1,
+      quantity: (map['quantity'] as num?)?.toDouble() ?? 1,
+      unit: map['unit'] as String?,
       category: map['category'] as String?,
       createdAt: DateTime.parse(map['createdAt'] as String),
     );

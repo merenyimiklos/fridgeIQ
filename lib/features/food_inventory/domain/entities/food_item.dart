@@ -6,7 +6,8 @@ class FoodItem {
   final String? barcode;
   final StorageLocation location;
   final DateTime expirationDate;
-  final int quantity;
+  final double quantity;
+  final String? unit;
   final String? category;
   final DateTime createdAt;
 
@@ -17,6 +18,7 @@ class FoodItem {
     required this.location,
     required this.expirationDate,
     this.quantity = 1,
+    this.unit,
     this.category,
     required this.createdAt,
   });
@@ -27,7 +29,8 @@ class FoodItem {
     String? barcode,
     StorageLocation? location,
     DateTime? expirationDate,
-    int? quantity,
+    double? quantity,
+    String? unit,
     String? category,
     DateTime? createdAt,
   }) {
@@ -38,6 +41,7 @@ class FoodItem {
       location: location ?? this.location,
       expirationDate: expirationDate ?? this.expirationDate,
       quantity: quantity ?? this.quantity,
+      unit: unit ?? this.unit,
       category: category ?? this.category,
       createdAt: createdAt ?? this.createdAt,
     );
