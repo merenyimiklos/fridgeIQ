@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fridgeiq/core/utils/date_utils.dart';
+import 'package:fridgeiq/core/utils/ingredient_parser.dart';
 import 'package:fridgeiq/core/widgets/expiration_badge.dart';
 import 'package:fridgeiq/features/food_inventory/domain/entities/food_item.dart';
 import 'package:fridgeiq/features/food_inventory/domain/entities/storage_location.dart';
@@ -136,7 +137,7 @@ class FoodItemTile extends StatelessWidget {
                     ExpirationBadge(expirationDate: item.expirationDate),
                     const SizedBox(height: 4),
                     Text(
-                      'Qty: ${item.quantity}',
+                      IngredientParser.formatQuantity(item.quantity, item.unit),
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ],

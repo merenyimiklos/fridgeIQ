@@ -4,7 +4,8 @@ class ShoppingItemModel {
   final String id;
   final String name;
   final bool isChecked;
-  final int quantity;
+  final double quantity;
+  final String? unit;
   final String? note;
   final DateTime createdAt;
 
@@ -13,6 +14,7 @@ class ShoppingItemModel {
     required this.name,
     this.isChecked = false,
     this.quantity = 1,
+    this.unit,
     this.note,
     required this.createdAt,
   });
@@ -23,6 +25,7 @@ class ShoppingItemModel {
       name: entity.name,
       isChecked: entity.isChecked,
       quantity: entity.quantity,
+      unit: entity.unit,
       note: entity.note,
       createdAt: entity.createdAt,
     );
@@ -34,6 +37,7 @@ class ShoppingItemModel {
       name: name,
       isChecked: isChecked,
       quantity: quantity,
+      unit: unit,
       note: note,
       createdAt: createdAt,
     );
@@ -45,6 +49,7 @@ class ShoppingItemModel {
       'name': name,
       'isChecked': isChecked,
       'quantity': quantity,
+      'unit': unit,
       'note': note,
       'createdAt': createdAt.toIso8601String(),
     };
@@ -55,7 +60,8 @@ class ShoppingItemModel {
       id: map['id'] as String,
       name: map['name'] as String,
       isChecked: map['isChecked'] as bool? ?? false,
-      quantity: map['quantity'] as int? ?? 1,
+      quantity: (map['quantity'] as num?)?.toDouble() ?? 1,
+      unit: map['unit'] as String?,
       note: map['note'] as String?,
       createdAt: DateTime.parse(map['createdAt'] as String),
     );

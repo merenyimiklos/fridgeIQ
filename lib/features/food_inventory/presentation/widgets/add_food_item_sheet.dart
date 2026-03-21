@@ -25,6 +25,7 @@ class _AddFoodItemSheetState extends ConsumerState<AddFoodItemSheet> {
   late final TextEditingController _categoryController;
   late StorageLocation _selectedLocation;
   late DateTime _selectedDate;
+  String? _selectedUnit;
 
   bool get _isEditing => widget.editItem != null;
 
@@ -36,15 +37,19 @@ class _AddFoodItemSheetState extends ConsumerState<AddFoodItemSheet> {
     _barcodeController = TextEditingController(
       text: item?.barcode ?? widget.initialBarcode ?? '',
     );
+    final qty = item?.quantity ?? 1;
     _quantityController = TextEditingController(
-      text: (item?.quantity ?? 1).toString(),
+      text: qty == qty.roundToDouble()
+          ? qty.toInt().toString()
+          : qty.toString(),
     );
     _categoryController = TextEditingController(text: item?.category ?? '');
-    _selectedLocation = (item?.location?.isPlaced ?? false)
-        ? item!.location
+    _selectedLocation = (item != null && item.location.isPlaced)
+        ? item.location
         : StorageLocation.fridge;
     _selectedDate = item?.expirationDate ??
         DateTime.now().add(const Duration(days: AppConstants.defaultExpirationDays));
+    _selectedUnit = item?.unit;
   }
 
   @override
@@ -111,11 +116,13 @@ class _AddFoodItemSheetState extends ConsumerState<AddFoodItemSheet> {
                         labelText: 'Quantity',
                         prefixIcon: Icon(Icons.numbers),
                       ),
-                      keyboardType: TextInputType.number,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
                       validator: (value) {
                         if (value == null || value.isEmpty) return null;
-                        final parsed = int.tryParse(value);
-                        if (parsed == null || parsed < 1) {
+                        final parsed = double.tryParse(value);
+                        if (parsed == null || parsed <= 0) {
                           return 'Enter a valid quantity';
                         }
                         return null;
@@ -123,6 +130,33 @@ class _AddFoodItemSheetState extends ConsumerState<AddFoodItemSheet> {
                     ),
                   ),
                   const SizedBox(width: 16),
+                  Expanded(
+                    child: DropdownButtonFormField<String?>(
+                      value: _selectedUnit,
+                      decoration: const InputDecoration(
+                        labelText: 'Unit',
+                        prefixIcon: Icon(Icons.straighten),
+                      ),
+                      items: const [
+                        DropdownMenuItem(value: null, child: Text('pcs')),
+                        DropdownMenuItem(value: 'db', child: Text('db')),
+                        DropdownMenuItem(value: 'kg', child: Text('kg')),
+                        DropdownMenuItem(value: 'g', child: Text('g')),
+                        DropdownMenuItem(value: 'dkg', child: Text('dkg')),
+                        DropdownMenuItem(value: 'l', child: Text('l')),
+                        DropdownMenuItem(value: 'dl', child: Text('dl')),
+                        DropdownMenuItem(value: 'ml', child: Text('ml')),
+                      ],
+                      onChanged: (value) {
+                        setState(() => _selectedUnit = value);
+                      },
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
                   Expanded(
                     child: TextFormField(
                       controller: _categoryController,
@@ -208,7 +242,8 @@ class _AddFoodItemSheetState extends ConsumerState<AddFoodItemSheet> {
           : _barcodeController.text.trim(),
       location: _selectedLocation,
       expirationDate: _selectedDate,
-      quantity: int.tryParse(_quantityController.text) ?? 1,
+      quantity: double.tryParse(_quantityController.text) ?? 1,
+      unit: _selectedUnit,
       category: _categoryController.text.trim().isEmpty
           ? null
           : _categoryController.text.trim(),

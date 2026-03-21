@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fridgeiq/core/utils/ingredient_parser.dart';
 import 'package:fridgeiq/features/meal_suggestion/domain/entities/recipe_match.dart';
 import 'package:fridgeiq/features/meal_suggestion/domain/entities/recipe_review.dart';
 import 'package:fridgeiq/features/meal_suggestion/presentation/providers/meal_suggestion_providers.dart';
@@ -590,12 +591,17 @@ class RecipeMatchCard extends ConsumerWidget {
 
   void _addMissingToShoppingList(BuildContext context, WidgetRef ref) {
     final items = match.missingIngredients
-        .map((ingredient) => ShoppingItem(
-              id: IdGenerator.generate(),
-              name: ingredient,
-              isChecked: false,
-              createdAt: DateTime.now(),
-            ))
+        .map((ingredient) {
+              final parsed = IngredientParser.parse(ingredient);
+              return ShoppingItem(
+                id: IdGenerator.generate(),
+                name: parsed.name,
+                isChecked: false,
+                quantity: parsed.quantity,
+                unit: parsed.unit,
+                createdAt: DateTime.now(),
+              );
+            })
         .toList();
     ref.read(shoppingListProvider.notifier).addItems(items);
 

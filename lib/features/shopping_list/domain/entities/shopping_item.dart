@@ -2,7 +2,8 @@ class ShoppingItem {
   final String id;
   final String name;
   final bool isChecked;
-  final int quantity;
+  final double quantity;
+  final String? unit;
   final String? note;
   final DateTime createdAt;
 
@@ -11,6 +12,7 @@ class ShoppingItem {
     required this.name,
     this.isChecked = false,
     this.quantity = 1,
+    this.unit,
     this.note,
     required this.createdAt,
   });
@@ -19,7 +21,8 @@ class ShoppingItem {
     String? id,
     String? name,
     bool? isChecked,
-    int? quantity,
+    double? quantity,
+    String? unit,
     String? note,
     DateTime? createdAt,
   }) {
@@ -28,6 +31,7 @@ class ShoppingItem {
       name: name ?? this.name,
       isChecked: isChecked ?? this.isChecked,
       quantity: quantity ?? this.quantity,
+      unit: unit ?? this.unit,
       note: note ?? this.note,
       createdAt: createdAt ?? this.createdAt,
     );
