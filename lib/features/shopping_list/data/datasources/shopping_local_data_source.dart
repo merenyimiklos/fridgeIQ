@@ -1,13 +1,11 @@
-import 'package:fridgeiq/core/constants/app_constants.dart';
 import 'package:fridgeiq/core/services/firebase_database_service.dart';
 import 'package:fridgeiq/features/shopping_list/data/models/shopping_item_model.dart';
 
 class ShoppingLocalDataSource {
   final FirebaseDatabaseService _firebaseService;
+  final String _collection;
 
-  ShoppingLocalDataSource(this._firebaseService);
-
-  static const _collection = AppConstants.shoppingBoxName;
+  ShoppingLocalDataSource(this._firebaseService, this._collection);
 
   Future<List<ShoppingItemModel>> getAllItems() async {
     final data = await _firebaseService.getAll(_collection);

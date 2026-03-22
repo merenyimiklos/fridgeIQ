@@ -22,7 +22,12 @@ class _AddRecipeSheetState extends ConsumerState<AddRecipeSheet> {
   late final TextEditingController _prepTimeController;
   late String _selectedMealType;
   final List<String> _ingredients = [];
-  final TextEditingController _ingredientController = TextEditingController();
+  final TextEditingController _ingredientNameController = TextEditingController();
+  final TextEditingController _ingredientQtyController = TextEditingController();
+  String? _selectedUnit;
+
+  static const _units = [null, 'kg', 'g', 'dkg', 'l', 'dl', 'ml', 'db', 'cups', 'tbsp', 'tsp'];
+  static const _unitLabels = ['pcs', 'kg', 'g', 'dkg', 'l', 'dl', 'ml', 'db', 'cups', 'tbsp', 'tsp'];
 
   bool get _isEditing => widget.editRecipe != null && !widget.isNewFromImport;
 
@@ -49,7 +54,8 @@ class _AddRecipeSheetState extends ConsumerState<AddRecipeSheet> {
     _instructionsController.dispose();
     _servingsController.dispose();
     _prepTimeController.dispose();
-    _ingredientController.dispose();
+    _ingredientNameController.dispose();
+    _ingredientQtyController.dispose();
     super.dispose();
   }
 
@@ -141,12 +147,48 @@ class _AddRecipeSheetState extends ConsumerState<AddRecipeSheet> {
               ),
               const SizedBox(height: 8),
               Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Quantity field
+                  SizedBox(
+                    width: 64,
+                    child: TextFormField(
+                      controller: _ingredientQtyController,
+                      decoration: const InputDecoration(
+                        labelText: 'Qty',
+                        hintText: '1',
+                      ),
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  // Unit dropdown
+                  SizedBox(
+                    width: 76,
+                    child: DropdownButtonFormField<String?>(
+                      value: _selectedUnit,
+                      decoration: const InputDecoration(
+                        labelText: 'Unit',
+                      ),
+                      isExpanded: true,
+                      items: List.generate(_units.length, (index) {
+                        return DropdownMenuItem<String?>(
+                          value: _units[index],
+                          child: Text(_unitLabels[index]),
+                        );
+                      }),
+                      onChanged: (value) {
+                        setState(() => _selectedUnit = value);
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  // Ingredient name field
                   Expanded(
                     child: TextFormField(
-                      controller: _ingredientController,
+                      controller: _ingredientNameController,
                       decoration: const InputDecoration(
-                        labelText: 'Add ingredient',
+                        labelText: 'Ingredient',
                         prefixIcon: Icon(Icons.add_circle_outline),
                       ),
                       textCapitalization: TextCapitalization.sentences,
@@ -154,9 +196,12 @@ class _AddRecipeSheetState extends ConsumerState<AddRecipeSheet> {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  IconButton.filled(
-                    onPressed: _addIngredient,
-                    icon: const Icon(Icons.add),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: IconButton.filled(
+                      onPressed: _addIngredient,
+                      icon: const Icon(Icons.add),
+                    ),
                   ),
                 ],
               ),
@@ -209,11 +254,35 @@ class _AddRecipeSheetState extends ConsumerState<AddRecipeSheet> {
   }
 
   void _addIngredient() {
-    final text = _ingredientController.text.trim();
-    if (text.isEmpty) return;
+    final name = _ingredientNameController.text.trim();
+    if (name.isEmpty) return;
+
+    final qtyStr = _ingredientQtyController.text.trim();
+    final qty = double.tryParse(qtyStr.replaceAll(',', '.'));
+
+    String ingredientStr;
+    if (qty != null && qty > 0) {
+      final qtyDisplay = qty == qty.roundToDouble()
+          ? qty.toInt().toString()
+          : qty.toStringAsFixed(1);
+      if (_selectedUnit != null) {
+        ingredientStr = '$qtyDisplay ${_selectedUnit!} $name';
+      } else {
+        ingredientStr = '$qtyDisplay $name';
+      }
+    } else {
+      if (_selectedUnit != null) {
+        ingredientStr = '1 ${_selectedUnit!} $name';
+      } else {
+        ingredientStr = name;
+      }
+    }
+
     setState(() {
-      _ingredients.add(text);
-      _ingredientController.clear();
+      _ingredients.add(ingredientStr);
+      _ingredientNameController.clear();
+      _ingredientQtyController.clear();
+      _selectedUnit = null;
     });
   }
 

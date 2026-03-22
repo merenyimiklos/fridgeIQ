@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fridgeiq/core/utils/date_utils.dart';
 import 'package:fridgeiq/core/widgets/expiration_badge.dart';
+import 'package:fridgeiq/features/family/presentation/providers/family_providers.dart';
 import 'package:fridgeiq/features/food_inventory/domain/entities/food_item.dart';
 import 'package:fridgeiq/features/food_inventory/domain/entities/storage_location.dart';
 import 'package:fridgeiq/features/food_inventory/presentation/providers/food_inventory_providers.dart';
@@ -13,10 +14,16 @@ class HomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final expiringItems = ref.watch(expiringItemsProvider);
     final allItems = ref.watch(foodInventoryProvider);
+    final currentFamily = ref.watch(currentFamilyProvider);
+    final familyName = currentFamily.whenData((f) => f?.name ?? 'FridgeIQ');
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('FridgeIQ'),
+        title: Text(familyName.valueOrNull ?? 'FridgeIQ'),
+        leading: IconButton(
+          icon: const Icon(Icons.menu),
+          onPressed: () => Scaffold.of(context).openDrawer(),
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),

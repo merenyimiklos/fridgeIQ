@@ -1,5 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fridgeiq/core/theme/app_theme.dart';
+import 'package:fridgeiq/features/auth/presentation/providers/auth_providers.dart';
+import 'package:fridgeiq/features/auth/presentation/screens/login_screen.dart';
+import 'package:fridgeiq/features/family/presentation/providers/family_providers.dart';
+import 'package:fridgeiq/features/family/presentation/screens/create_join_family_screen.dart';
+import 'package:fridgeiq/features/family/presentation/widgets/family_drawer.dart';
 import 'package:fridgeiq/features/home/presentation/screens/home_screen.dart';
 import 'package:fridgeiq/features/food_inventory/presentation/screens/food_inventory_screen.dart';
 import 'package:fridgeiq/features/meal_suggestion/presentation/screens/meal_suggestion_screen.dart';
@@ -16,7 +22,36 @@ class FridgeIQApp extends StatelessWidget {
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: ThemeMode.system,
-      home: const AppShell(),
+      home: const AuthGate(),
+    );
+  }
+}
+
+/// Decides which screen to show based on auth and family state.
+class AuthGate extends ConsumerWidget {
+  const AuthGate({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final authState = ref.watch(authStateProvider);
+
+    return authState.when(
+      data: (user) {
+        if (user == null) {
+          return const LoginScreen();
+        }
+
+        final currentFamilyId = ref.watch(currentFamilyIdProvider);
+        if (currentFamilyId == null || user.familyIds.isEmpty) {
+          return const CreateJoinFamilyScreen();
+        }
+
+        return const AppShell();
+      },
+      loading: () => const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      ),
+      error: (_, __) => const LoginScreen(),
     );
   }
 }
@@ -41,6 +76,7 @@ class _AppShellState extends State<AppShell> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      drawer: const FamilyDrawer(),
       body: IndexedStack(
         index: _currentIndex,
         children: _screens,
