@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart' hide Family;
+import 'package:fridgeiq/features/auth/presentation/providers/auth_providers.dart';
 import 'package:fridgeiq/features/family/presentation/providers/family_providers.dart';
 
 class CreateJoinFamilyScreen extends ConsumerStatefulWidget {
@@ -15,6 +16,7 @@ class _CreateJoinFamilyScreenState
   final _familyNameController = TextEditingController();
   final _inviteCodeController = TextEditingController();
   bool _isLoading = false;
+  bool _hasJoinedOrCreated = false;
 
   @override
   void dispose() {
@@ -149,6 +151,7 @@ class _CreateJoinFamilyScreenState
   }
 
   Future<void> _createFamily() async {
+    if (_hasJoinedOrCreated) return;
     final name = _familyNameController.text.trim();
     if (name.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -163,6 +166,9 @@ class _CreateJoinFamilyScreenState
     setState(() => _isLoading = true);
     try {
       await ref.read(userFamiliesProvider.notifier).createFamily(name);
+      _hasJoinedOrCreated = true;
+      // Force AuthGate to re-evaluate and navigate to AppShell
+      ref.invalidate(authStateProvider);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -178,6 +184,7 @@ class _CreateJoinFamilyScreenState
   }
 
   Future<void> _joinFamily() async {
+    if (_hasJoinedOrCreated) return;
     final code = _inviteCodeController.text.trim();
     if (code.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -200,6 +207,10 @@ class _CreateJoinFamilyScreenState
             behavior: SnackBarBehavior.floating,
           ),
         );
+      } else {
+        _hasJoinedOrCreated = true;
+        // Force AuthGate to re-evaluate and navigate to AppShell
+        ref.invalidate(authStateProvider);
       }
     } catch (e) {
       if (mounted) {

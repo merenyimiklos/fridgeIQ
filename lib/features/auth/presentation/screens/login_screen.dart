@@ -220,9 +220,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     setState(() => _isLoading = true);
     try {
-      await ref
+      final user = await ref
           .read(authStateProvider.notifier)
           .signInWithEmailPassword(email, password);
+      // If user exists but email not verified, sign out and show message
+      if (user != null && !user.emailVerified) {
+        // AuthGate will show the email verification screen
+      }
     } on FirebaseAuthException catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

@@ -136,6 +136,82 @@ class UserFamiliesNotifier extends AsyncNotifier<List<Family>> {
 
     ref.invalidateSelf();
   }
+
+  Future<void> deleteFamily(String familyId) async {
+    final user = ref.read(authStateProvider).valueOrNull;
+    if (user == null) return;
+
+    final repo = ref.read(familyRepositoryProvider);
+    final family = await repo.getFamilyById(familyId);
+    if (family == null) return;
+
+    // Only the creator can delete
+    if (family.createdBy != user.id) {
+      throw Exception('Only the family creator can delete this family');
+    }
+
+    // Remove familyId from all members' user records concurrently
+    final authRepo = ref.read(authRepositoryProvider);
+    await Future.wait(family.memberIds.map((memberId) async {
+      final member = await authRepo.getUserById(memberId);
+      if (member != null) {
+        final updatedMemberFamilyIds =
+            member.familyIds.where((id) => id != familyId).toList();
+        await authRepo.saveUser(member.copyWith(familyIds: updatedMemberFamilyIds));
+      }
+    }));
+
+    // Delete the family
+    await repo.deleteFamily(familyId);
+
+    // Update current user's state
+    final updatedFamilyIds =
+        user.familyIds.where((id) => id != familyId).toList();
+    final updatedUser = user.copyWith(familyIds: updatedFamilyIds);
+    await ref.read(authStateProvider.notifier).updateUser(updatedUser);
+
+    // If we were in the deleted family, switch to another or clear
+    final currentId = ref.read(currentFamilyIdProvider);
+    if (currentId == familyId) {
+      if (updatedFamilyIds.isNotEmpty) {
+        ref
+            .read(currentFamilyIdProvider.notifier)
+            .setFamily(updatedFamilyIds.first);
+      } else {
+        ref.read(currentFamilyIdProvider.notifier).clear();
+      }
+    }
+
+    ref.invalidateSelf();
+  }
+
+  Future<void> removeMember(String familyId, String memberId) async {
+    final user = ref.read(authStateProvider).valueOrNull;
+    if (user == null) return;
+
+    final repo = ref.read(familyRepositoryProvider);
+    final family = await repo.getFamilyById(familyId);
+    if (family == null) return;
+
+    // Only the creator can kick members
+    if (family.createdBy != user.id) {
+      throw Exception('Only the family creator can remove members');
+    }
+
+    // Remove the member from the family
+    await repo.removeMember(familyId, memberId);
+
+    // Update the removed member's user record
+    final authRepo = ref.read(authRepositoryProvider);
+    final member = await authRepo.getUserById(memberId);
+    if (member != null) {
+      final updatedMemberFamilyIds =
+          member.familyIds.where((id) => id != familyId).toList();
+      await authRepo.saveUser(member.copyWith(familyIds: updatedMemberFamilyIds));
+    }
+
+    ref.invalidateSelf();
+  }
 }
 
 /// Provider for the current active family details.

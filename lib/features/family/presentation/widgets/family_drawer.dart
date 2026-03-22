@@ -1,9 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart' hide Family;
+import 'package:fridgeiq/features/auth/domain/entities/app_user.dart';
 import 'package:fridgeiq/features/auth/presentation/providers/auth_providers.dart';
 import 'package:fridgeiq/features/family/domain/entities/family.dart';
 import 'package:fridgeiq/features/family/presentation/providers/family_providers.dart';
+
+/// Provider that fetches AppUser objects for all members of a family by its ID.
+final familyMembersProvider =
+    FutureProvider.family<List<AppUser>, String>((ref, familyId) async {
+  final familyRepo = ref.read(familyRepositoryProvider);
+  final family = await familyRepo.getFamilyById(familyId);
+  if (family == null) return [];
+  final authRepo = ref.read(authRepositoryProvider);
+  final futures = family.memberIds.map((id) => authRepo.getUserById(id));
+  final results = await Future.wait(futures);
+  return results.whereType<AppUser>().toList();
+});
 
 class FamilyDrawer extends ConsumerWidget {
   const FamilyDrawer({super.key});
@@ -101,6 +114,7 @@ class FamilyDrawer extends ConsumerWidget {
                     itemBuilder: (context, index) {
                       final family = families[index];
                       final isActive = family.id == currentFamilyId;
+                      final isCreator = user != null && family.createdBy == user.id;
                       return ListTile(
                         leading: CircleAvatar(
                           backgroundColor: isActive
@@ -114,12 +128,23 @@ class FamilyDrawer extends ConsumerWidget {
                             size: 20,
                           ),
                         ),
-                        title: Text(
-                          family.name,
-                          style: TextStyle(
-                            fontWeight:
-                                isActive ? FontWeight.bold : FontWeight.normal,
-                          ),
+                        title: Row(
+                          children: [
+                            Flexible(
+                              child: Text(
+                                family.name,
+                                style: TextStyle(
+                                  fontWeight:
+                                      isActive ? FontWeight.bold : FontWeight.normal,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            if (isCreator) ...[
+                              const SizedBox(width: 4),
+                              Icon(Icons.star, size: 14, color: colorScheme.primary),
+                            ],
+                          ],
                         ),
                         subtitle: Text(
                             '${family.memberIds.length} member${family.memberIds.length != 1 ? 's' : ''}'),
@@ -135,7 +160,7 @@ class FamilyDrawer extends ConsumerWidget {
                           Navigator.pop(context);
                         },
                         onLongPress: () =>
-                            _showFamilyOptions(context, ref, family),
+                            _showFamilyOptions(context, ref, family, user),
                       );
                     },
                   );
@@ -173,20 +198,31 @@ class FamilyDrawer extends ConsumerWidget {
   }
 
   void _showFamilyOptions(
-      BuildContext context, WidgetRef ref, Family family) {
+      BuildContext context, WidgetRef ref, Family family, AppUser? user) {
+    final isCreator = user != null && family.createdBy == user.id;
     showModalBottomSheet(
       context: context,
-      builder: (context) => SafeArea(
+      builder: (sheetContext) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            // Show members section
+            ListTile(
+              leading: const Icon(Icons.people),
+              title: const Text('Members'),
+              subtitle: Text('${family.memberIds.length} member${family.memberIds.length != 1 ? 's' : ''}'),
+              onTap: () {
+                Navigator.pop(sheetContext);
+                _showMembersDialog(context, ref, family, user);
+              },
+            ),
             ListTile(
               leading: const Icon(Icons.share),
               title: const Text('Share Invite Code'),
               subtitle: Text(family.inviteCode),
               onTap: () {
                 Clipboard.setData(ClipboardData(text: family.inviteCode));
-                Navigator.pop(context);
+                Navigator.pop(sheetContext);
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(
@@ -196,24 +232,216 @@ class FamilyDrawer extends ConsumerWidget {
                 );
               },
             ),
-            ListTile(
-              leading: Icon(Icons.exit_to_app,
-                  color: Theme.of(context).colorScheme.error),
-              title: Text(
-                'Leave Family',
-                style:
-                    TextStyle(color: Theme.of(context).colorScheme.error),
+            if (!isCreator)
+              ListTile(
+                leading: Icon(Icons.exit_to_app,
+                    color: Theme.of(context).colorScheme.error),
+                title: Text(
+                  'Leave Family',
+                  style:
+                      TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  Navigator.pop(context); // close drawer
+                  _confirmLeaveFamily(context, ref, family);
+                },
               ),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.pop(context); // close drawer
-                ref
-                    .read(userFamiliesProvider.notifier)
-                    .leaveFamily(family.id);
-              },
-            ),
+            if (isCreator)
+              ListTile(
+                leading: Icon(Icons.delete_forever,
+                    color: Theme.of(context).colorScheme.error),
+                title: Text(
+                  'Delete Family',
+                  style:
+                      TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  Navigator.pop(context); // close drawer
+                  _confirmDeleteFamily(context, ref, family);
+                },
+              ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showMembersDialog(
+      BuildContext context, WidgetRef ref, Family family, AppUser? user) {
+    final isCreator = user != null && family.createdBy == user.id;
+    showDialog(
+      context: context,
+      builder: (dialogContext) => Consumer(
+        builder: (context, dialogRef, _) {
+          final membersAsync =
+              dialogRef.watch(familyMembersProvider(family.id));
+          return AlertDialog(
+            title: Text('${family.name} - Members'),
+            content: SizedBox(
+              width: double.maxFinite,
+              child: membersAsync.when(
+                data: (members) => ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: members.length,
+                  itemBuilder: (context, index) {
+                    final member = members[index];
+                    final isMemberCreator = member.id == family.createdBy;
+                    final isCurrentUser = user != null && member.id == user.id;
+                    return ListTile(
+                      leading: CircleAvatar(
+                        backgroundImage: member.photoUrl != null
+                            ? NetworkImage(member.photoUrl!)
+                            : null,
+                        child: member.photoUrl == null
+                            ? Text(member.displayName.isNotEmpty
+                                ? member.displayName[0].toUpperCase()
+                                : '?')
+                            : null,
+                      ),
+                      title: Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              member.displayName,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (isMemberCreator) ...[
+                            const SizedBox(width: 4),
+                            Icon(Icons.star, size: 16, color: Theme.of(context).colorScheme.primary),
+                          ],
+                          if (isCurrentUser) ...[
+                            const SizedBox(width: 4),
+                            const Text(' (you)',
+                                style: TextStyle(
+                                    fontSize: 12, fontStyle: FontStyle.italic)),
+                          ],
+                        ],
+                      ),
+                      subtitle: Text(member.email),
+                      trailing: isCreator && !isMemberCreator && !isCurrentUser
+                          ? IconButton(
+                              icon: Icon(Icons.person_remove,
+                                  color: Theme.of(context).colorScheme.error),
+                              tooltip: 'Remove from family',
+                              onPressed: () {
+                                Navigator.pop(dialogContext);
+                                Navigator.pop(context); // close drawer
+                                _confirmRemoveMember(
+                                    context, ref, family, member);
+                              },
+                            )
+                          : null,
+                    );
+                  },
+                ),
+                loading: () => const SizedBox(
+                  height: 100,
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+                error: (e, _) => Text('Failed to load members: $e'),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                child: const Text('Close'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  void _confirmLeaveFamily(
+      BuildContext context, WidgetRef ref, Family family) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Leave Family'),
+        content: Text(
+            'Are you sure you want to leave "${family.name}"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+            onPressed: () {
+              Navigator.pop(dialogContext);
+              ref
+                  .read(userFamiliesProvider.notifier)
+                  .leaveFamily(family.id);
+            },
+            child: const Text('Leave'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmDeleteFamily(
+      BuildContext context, WidgetRef ref, Family family) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Delete Family'),
+        content: Text(
+            'Are you sure you want to delete "${family.name}"? All members will be removed.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+            onPressed: () {
+              Navigator.pop(dialogContext);
+              ref
+                  .read(userFamiliesProvider.notifier)
+                  .deleteFamily(family.id);
+            },
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmRemoveMember(
+      BuildContext context, WidgetRef ref, Family family, AppUser member) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Remove Member'),
+        content: Text(
+            'Are you sure you want to remove "${member.displayName}" from "${family.name}"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+            onPressed: () {
+              Navigator.pop(dialogContext);
+              ref
+                  .read(userFamiliesProvider.notifier)
+                  .removeMember(family.id, member.id);
+            },
+            child: const Text('Remove'),
+          ),
+        ],
       ),
     );
   }

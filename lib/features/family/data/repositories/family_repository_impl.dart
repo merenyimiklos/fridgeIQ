@@ -92,4 +92,31 @@ class FamilyRepositoryImpl implements FamilyRepository {
     );
     await _dataSource.saveFamily(updatedModel);
   }
+
+  @override
+  Future<void> deleteFamily(String familyId) async {
+    final model = await _dataSource.getFamilyById(familyId);
+    if (model == null) return;
+    // Delete invite code entry
+    await _dataSource.deleteInviteCode(model.inviteCode);
+    // Delete family
+    await _dataSource.deleteFamily(familyId);
+  }
+
+  @override
+  Future<void> removeMember(String familyId, String userId) async {
+    final model = await _dataSource.getFamilyById(familyId);
+    if (model == null) return;
+
+    final updatedMemberIds =
+        model.memberIds.where((id) => id != userId).toList();
+    final updatedModel = FamilyModel(
+      id: model.id,
+      name: model.name,
+      createdBy: model.createdBy,
+      inviteCode: model.inviteCode,
+      memberIds: updatedMemberIds,
+    );
+    await _dataSource.saveFamily(updatedModel);
+  }
 }
