@@ -23,7 +23,6 @@ class AuthNotifier extends AsyncNotifier<AppUser?> {
   }
 
   Future<AppUser?> signInWithGoogle() async {
-    state = const AsyncLoading();
     try {
       final user =
           await ref.read(authRepositoryProvider).signInWithGoogle();
@@ -31,13 +30,12 @@ class AuthNotifier extends AsyncNotifier<AppUser?> {
       return user;
     } catch (e, s) {
       state = AsyncError(e, s);
-      return null;
+      rethrow;
     }
   }
 
   Future<AppUser?> signInWithEmailPassword(
       String email, String password) async {
-    state = const AsyncLoading();
     try {
       final user = await ref
           .read(authRepositoryProvider)
@@ -52,7 +50,6 @@ class AuthNotifier extends AsyncNotifier<AppUser?> {
 
   Future<AppUser?> signUpWithEmailPassword(
       String email, String password, String displayName) async {
-    state = const AsyncLoading();
     try {
       final user = await ref
           .read(authRepositoryProvider)
@@ -98,7 +95,7 @@ class AuthNotifier extends AsyncNotifier<AppUser?> {
   }
 
   Future<void> updateUser(AppUser user) async {
-    await ref.read(authRepositoryProvider).saveUser(user);
     state = AsyncData(user);
+    await ref.read(authRepositoryProvider).saveUser(user);
   }
 }

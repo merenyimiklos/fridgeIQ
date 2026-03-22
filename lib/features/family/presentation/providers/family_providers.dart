@@ -72,11 +72,18 @@ class UserFamiliesNotifier extends AsyncNotifier<List<Family>> {
     final repo = ref.read(familyRepositoryProvider);
     final family = await repo.createFamily(name, user.id);
 
-    // Update user's family list
-    final authNotifier = ref.read(authStateProvider.notifier);
+    // Post-creation: update user record and set current family.
+    // The family has been created successfully in Firebase, so these
+    // steps are best-effort – failures must not surface as
+    // "Failed to create family".
     final updatedUser =
         user.copyWith(familyIds: [...user.familyIds, family.id]);
-    await authNotifier.updateUser(updatedUser);
+    try {
+      await ref.read(authStateProvider.notifier).updateUser(updatedUser);
+    } catch (_) {
+      // Firebase persist may fail but local auth state was already
+      // updated inside updateUser before the network call.
+    }
 
     // Set as current family
     ref.read(currentFamilyIdProvider.notifier).setFamily(family.id);
@@ -95,10 +102,13 @@ class UserFamiliesNotifier extends AsyncNotifier<List<Family>> {
 
     // Update user's family list if not already there
     if (!user.familyIds.contains(family.id)) {
-      final authNotifier = ref.read(authStateProvider.notifier);
       final updatedUser =
           user.copyWith(familyIds: [...user.familyIds, family.id]);
-      await authNotifier.updateUser(updatedUser);
+      try {
+        await ref.read(authStateProvider.notifier).updateUser(updatedUser);
+      } catch (_) {
+        // Firebase persist may fail but local auth state was already updated.
+      }
     }
 
     // Set as current family
