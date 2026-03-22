@@ -1,0 +1,14 @@
+{
+  "database": {
+    "rules": "database.rules.json"
+  },
+  "auth": {
+    "providers": {
+      "emailPassword": true,
+      "googleSignIn": {
+        "oAuthBrandDisplayName": "FridgeIQ",
+        "supportEmail": "merenyi.miklos5@gmail.com"
+      }
+    }
+  }
+}
