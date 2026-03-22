@@ -26,19 +26,27 @@ class CurrentFamilyIdNotifier extends StateNotifier<String?> {
   static const _key = 'current_family_id';
 
   CurrentFamilyIdNotifier() : super(null) {
-    final box = Hive.box<String>(AppConstants.settingsBoxName);
-    state = box.get(_key);
+    try {
+      final box = Hive.box<String>(AppConstants.settingsBoxName);
+      state = box.get(_key);
+    } catch (_) {
+      // Hive not initialized (e.g., in tests)
+    }
   }
 
   void setFamily(String familyId) {
-    final box = Hive.box<String>(AppConstants.settingsBoxName);
-    box.put(_key, familyId);
+    try {
+      final box = Hive.box<String>(AppConstants.settingsBoxName);
+      box.put(_key, familyId);
+    } catch (_) {}
     state = familyId;
   }
 
   void clear() {
-    final box = Hive.box<String>(AppConstants.settingsBoxName);
-    box.delete(_key);
+    try {
+      final box = Hive.box<String>(AppConstants.settingsBoxName);
+      box.delete(_key);
+    } catch (_) {}
     state = null;
   }
 }
