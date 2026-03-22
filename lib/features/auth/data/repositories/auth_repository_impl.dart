@@ -14,10 +14,9 @@ class AuthRepositoryImpl implements AuthRepository {
     final account = await _dataSource.signInWithGoogle();
     if (account == null) return null;
 
-    final userId = account.id;
-
     // Try to sign in via Firebase Auth if API key is configured
     bool emailVerified = false;
+    String userId = account.id; // fallback to Google ID
     final authService = _dataSource.createAuthService();
     if (authService != null) {
       try {
@@ -26,6 +25,11 @@ class AuthRepositoryImpl implements AuthRepository {
           final result = await authService.signInWithGoogle(
             idToken: googleAuth.idToken!,
           );
+          // Use Firebase UID for consistency with email/password auth
+          final firebaseUid = result['localId'] as String?;
+          if (firebaseUid != null) {
+            userId = firebaseUid;
+          }
           final idToken = result['idToken'] as String?;
           if (idToken != null) {
             await _dataSource.saveFirebaseIdToken(idToken);
@@ -61,7 +65,7 @@ class AuthRepositoryImpl implements AuthRepository {
       return updatedModel.toEntity();
     }
 
-    // New user - needs verification
+    // New user
     final newModel = AppUserModel(
       id: userId,
       email: account.email,
