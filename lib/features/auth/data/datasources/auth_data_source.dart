@@ -26,9 +26,8 @@ class AuthDataSource {
       }
       throw PlatformException(
         code: e.code,
-        message: 'Google Sign-In failed. Please verify that your device '
-            'supports Google Play Services and that the app is configured '
-            'correctly.',
+        message: 'Google Sign-In failed. Please ensure Google Play Services '
+            'is up to date and try again.',
         details: e.details,
       );
     }
