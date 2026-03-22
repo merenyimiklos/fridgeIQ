@@ -29,8 +29,10 @@ class AuthNotifier extends AsyncNotifier<AppUser?> {
       state = AsyncData(user);
       return user;
     } catch (e, s) {
-      state = AsyncError(e, s);
-      rethrow;
+      // Keep auth state as-is (data(null)) so AuthGate stays on the
+      // login screen instead of switching to the error path.
+      state = AsyncData(state.valueOrNull);
+      Error.throwWithStackTrace(e, s);
     }
   }
 
@@ -43,8 +45,8 @@ class AuthNotifier extends AsyncNotifier<AppUser?> {
       state = AsyncData(user);
       return user;
     } catch (e, s) {
-      state = AsyncError(e, s);
-      rethrow;
+      state = AsyncData(state.valueOrNull);
+      Error.throwWithStackTrace(e, s);
     }
   }
 
@@ -57,8 +59,8 @@ class AuthNotifier extends AsyncNotifier<AppUser?> {
       state = AsyncData(user);
       return user;
     } catch (e, s) {
-      state = AsyncError(e, s);
-      rethrow;
+      state = AsyncData(state.valueOrNull);
+      Error.throwWithStackTrace(e, s);
     }
   }
 
