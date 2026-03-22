@@ -9,7 +9,7 @@ class AuthDataSource {
   final GoogleSignIn _googleSignIn;
 
   AuthDataSource(this._firebaseService, {GoogleSignIn? googleSignIn})
-      : _googleSignIn = googleSignIn ?? GoogleSignIn(scopes: ['email']);
+      : _googleSignIn = googleSignIn ?? GoogleSignIn(scopes: ['email', 'profile']);
 
   static const _collection = 'users';
   static const _currentUserKey = 'current_user_id';

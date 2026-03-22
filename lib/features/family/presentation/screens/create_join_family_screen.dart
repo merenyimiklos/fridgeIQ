@@ -166,8 +166,8 @@ class _CreateJoinFamilyScreenState
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to create family: $e'),
+          const SnackBar(
+            content: Text('Failed to create family. Please try again.'),
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -204,8 +204,8 @@ class _CreateJoinFamilyScreenState
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to join family: $e'),
+          const SnackBar(
+            content: Text('Failed to join family. Please try again.'),
             behavior: SnackBarBehavior.floating,
           ),
         );

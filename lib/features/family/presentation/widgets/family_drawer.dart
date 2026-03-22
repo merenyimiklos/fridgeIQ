@@ -50,7 +50,7 @@ class FamilyDrawer extends ConsumerWidget {
                     user?.email ?? '',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: colorScheme.onPrimaryContainer
-                              .withValues(alpha: 0.7),
+                              .withOpacity(0.7),
                         ),
                   ),
                 ],
@@ -323,7 +323,7 @@ class _CreateJoinFamilySheetState
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'),
+          const SnackBar(content: Text('Failed to create family. Please try again.'),
               behavior: SnackBarBehavior.floating),
         );
       }
@@ -352,7 +352,7 @@ class _CreateJoinFamilySheetState
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'),
+          const SnackBar(content: Text('Failed to join family. Please try again.'),
               behavior: SnackBarBehavior.floating),
         );
       }
