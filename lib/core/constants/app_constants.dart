@@ -13,4 +13,6 @@ class AppConstants {
 
   static const String firebaseDatabaseUrl =
       'https://firedgeiq-default-rtdb.europe-west1.firebasedatabase.app';
+
+  static const String firebaseApiKeySettingKey = 'firebase_api_key';
 }

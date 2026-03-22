@@ -35,6 +35,58 @@ class AuthNotifier extends AsyncNotifier<AppUser?> {
     }
   }
 
+  Future<AppUser?> signInWithEmailPassword(
+      String email, String password) async {
+    state = const AsyncLoading();
+    try {
+      final user = await ref
+          .read(authRepositoryProvider)
+          .signInWithEmailPassword(email, password);
+      state = AsyncData(user);
+      return user;
+    } catch (e, s) {
+      state = AsyncError(e, s);
+      rethrow;
+    }
+  }
+
+  Future<AppUser?> signUpWithEmailPassword(
+      String email, String password, String displayName) async {
+    state = const AsyncLoading();
+    try {
+      final user = await ref
+          .read(authRepositoryProvider)
+          .signUpWithEmailPassword(email, password, displayName);
+      state = AsyncData(user);
+      return user;
+    } catch (e, s) {
+      state = AsyncError(e, s);
+      rethrow;
+    }
+  }
+
+  Future<void> sendPasswordResetEmail(String email) async {
+    await ref.read(authRepositoryProvider).sendPasswordResetEmail(email);
+  }
+
+  Future<void> sendEmailVerification() async {
+    await ref.read(authRepositoryProvider).sendEmailVerification();
+  }
+
+  Future<bool> checkEmailVerified() async {
+    final verified =
+        await ref.read(authRepositoryProvider).checkEmailVerified();
+    if (verified) {
+      final currentUser = state.valueOrNull;
+      if (currentUser != null && !currentUser.emailVerified) {
+        final updatedUser = currentUser.copyWith(emailVerified: true);
+        await ref.read(authRepositoryProvider).saveUser(updatedUser);
+        state = AsyncData(updatedUser);
+      }
+    }
+    return verified;
+  }
+
   Future<void> signOut() async {
     await ref.read(authRepositoryProvider).signOut();
     state = const AsyncData(null);

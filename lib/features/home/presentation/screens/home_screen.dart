@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart' hide Family;
 import 'package:fridgeiq/core/utils/date_utils.dart';
 import 'package:fridgeiq/core/widgets/expiration_badge.dart';
 import 'package:fridgeiq/features/family/presentation/providers/family_providers.dart';

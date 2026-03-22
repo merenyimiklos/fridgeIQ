@@ -4,6 +4,7 @@ class AppUser {
   final String displayName;
   final String? photoUrl;
   final List<String> familyIds;
+  final bool emailVerified;
 
   const AppUser({
     required this.id,
@@ -11,6 +12,7 @@ class AppUser {
     required this.displayName,
     this.photoUrl,
     this.familyIds = const [],
+    this.emailVerified = false,
   });
 
   AppUser copyWith({
@@ -19,6 +21,7 @@ class AppUser {
     String? displayName,
     String? photoUrl,
     List<String>? familyIds,
+    bool? emailVerified,
   }) {
     return AppUser(
       id: id ?? this.id,
@@ -26,6 +29,7 @@ class AppUser {
       displayName: displayName ?? this.displayName,
       photoUrl: photoUrl ?? this.photoUrl,
       familyIds: familyIds ?? this.familyIds,
+      emailVerified: emailVerified ?? this.emailVerified,
     );
   }
 

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart' hide Family;
 import 'package:fridgeiq/core/theme/app_theme.dart';
 import 'package:fridgeiq/features/auth/presentation/providers/auth_providers.dart';
+import 'package:fridgeiq/features/auth/presentation/screens/email_verification_screen.dart';
 import 'package:fridgeiq/features/auth/presentation/screens/login_screen.dart';
 import 'package:fridgeiq/features/family/presentation/providers/family_providers.dart';
 import 'package:fridgeiq/features/family/presentation/screens/create_join_family_screen.dart';
@@ -39,6 +40,15 @@ class AuthGate extends ConsumerWidget {
       data: (user) {
         if (user == null) {
           return const LoginScreen();
+        }
+
+        // Check email verification - if Firebase Auth API key is configured
+        // and user hasn't verified their email, show verification screen
+        final hasApiKey = ref.read(authDataSourceProvider).getFirebaseApiKey();
+        if (hasApiKey != null &&
+            hasApiKey.isNotEmpty &&
+            !user.emailVerified) {
+          return const EmailVerificationScreen();
         }
 
         final currentFamilyId = ref.watch(currentFamilyIdProvider);
