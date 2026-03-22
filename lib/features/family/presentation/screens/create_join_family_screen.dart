@@ -167,13 +167,14 @@ class _CreateJoinFamilyScreenState
     try {
       await ref.read(userFamiliesProvider.notifier).createFamily(name);
       _hasJoinedOrCreated = true;
-      // Force AuthGate to re-evaluate and navigate to AppShell
+      // Auth state and current family are already updated inside
+      // createFamily; just refresh so AuthGate navigates to AppShell.
       ref.invalidate(authStateProvider);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to create family. Please try again.'),
+          SnackBar(
+            content: Text('Failed to create family: $e'),
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -209,14 +210,13 @@ class _CreateJoinFamilyScreenState
         );
       } else {
         _hasJoinedOrCreated = true;
-        // Force AuthGate to re-evaluate and navigate to AppShell
         ref.invalidate(authStateProvider);
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to join family. Please try again.'),
+          SnackBar(
+            content: Text('Failed to join family: $e'),
             behavior: SnackBarBehavior.floating,
           ),
         );

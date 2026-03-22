@@ -73,22 +73,26 @@ class UserFamiliesNotifier extends AsyncNotifier<List<Family>> {
     final family = await repo.createFamily(name, user.id);
 
     // Post-creation: update user record and set current family.
-    // The family has been created successfully in Firebase, so these
-    // steps are best-effort – failures must not surface as
-    // "Failed to create family".
-    final updatedUser =
-        user.copyWith(familyIds: [...user.familyIds, family.id]);
+    // The family has been created successfully in Firebase, so ALL
+    // subsequent steps are best-effort – failures must never surface
+    // as "Failed to create family".
     try {
-      await ref.read(authStateProvider.notifier).updateUser(updatedUser);
+      ref.read(currentFamilyIdProvider.notifier).setFamily(family.id);
+
+      final updatedUser =
+          user.copyWith(familyIds: [...user.familyIds, family.id]);
+      try {
+        await ref.read(authStateProvider.notifier).updateUser(updatedUser);
+      } catch (_) {
+        // Firebase persist may fail but local auth state was already
+        // updated inside updateUser before the network call.
+      }
+
+      ref.invalidateSelf();
     } catch (_) {
-      // Firebase persist may fail but local auth state was already
-      // updated inside updateUser before the network call.
+      // Post-creation cleanup failed; family was already created.
     }
 
-    // Set as current family
-    ref.read(currentFamilyIdProvider.notifier).setFamily(family.id);
-
-    ref.invalidateSelf();
     return family;
   }
 
@@ -100,21 +104,27 @@ class UserFamiliesNotifier extends AsyncNotifier<List<Family>> {
     final family = await repo.joinFamilyByCode(inviteCode, user.id);
     if (family == null) return null;
 
-    // Update user's family list if not already there
-    if (!user.familyIds.contains(family.id)) {
-      final updatedUser =
-          user.copyWith(familyIds: [...user.familyIds, family.id]);
-      try {
-        await ref.read(authStateProvider.notifier).updateUser(updatedUser);
-      } catch (_) {
-        // Firebase persist may fail but local auth state was already updated.
+    // Post-join: update user record and set current family.
+    // The join has succeeded in Firebase, so ALL subsequent steps are
+    // best-effort – failures must never surface as "Failed to join".
+    try {
+      ref.read(currentFamilyIdProvider.notifier).setFamily(family.id);
+
+      if (!user.familyIds.contains(family.id)) {
+        final updatedUser =
+            user.copyWith(familyIds: [...user.familyIds, family.id]);
+        try {
+          await ref.read(authStateProvider.notifier).updateUser(updatedUser);
+        } catch (_) {
+          // Firebase persist may fail but local auth state was already updated.
+        }
       }
+
+      ref.invalidateSelf();
+    } catch (_) {
+      // Post-join cleanup failed; family was already joined.
     }
 
-    // Set as current family
-    ref.read(currentFamilyIdProvider.notifier).setFamily(family.id);
-
-    ref.invalidateSelf();
     return family;
   }
 

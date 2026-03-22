@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:fridgeiq/core/services/firebase_auth_service.dart';
 import 'package:fridgeiq/core/services/firebase_database_service.dart';
 import 'package:fridgeiq/features/auth/data/models/app_user_model.dart';
@@ -17,7 +18,20 @@ class AuthDataSource {
   static const _firebaseIdTokenKey = 'firebase_id_token';
 
   Future<GoogleSignInAccount?> signInWithGoogle() async {
-    return _googleSignIn.signIn();
+    try {
+      return await _googleSignIn.signIn();
+    } on PlatformException catch (e) {
+      if (e.code == 'sign_in_canceled') {
+        return null;
+      }
+      throw PlatformException(
+        code: e.code,
+        message: 'Google Sign-In failed. Please verify that your device '
+            'supports Google Play Services and that the app is configured '
+            'correctly.',
+        details: e.details,
+      );
+    }
   }
 
   Future<void> signOut() async {
