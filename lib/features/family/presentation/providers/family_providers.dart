@@ -150,16 +150,16 @@ class UserFamiliesNotifier extends AsyncNotifier<List<Family>> {
       throw Exception('Only the family creator can delete this family');
     }
 
-    // Remove familyId from all members' user records
+    // Remove familyId from all members' user records concurrently
     final authRepo = ref.read(authRepositoryProvider);
-    for (final memberId in family.memberIds) {
+    await Future.wait(family.memberIds.map((memberId) async {
       final member = await authRepo.getUserById(memberId);
       if (member != null) {
         final updatedMemberFamilyIds =
             member.familyIds.where((id) => id != familyId).toList();
         await authRepo.saveUser(member.copyWith(familyIds: updatedMemberFamilyIds));
       }
-    }
+    }));
 
     // Delete the family
     await repo.deleteFamily(familyId);

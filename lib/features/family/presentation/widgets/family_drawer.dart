@@ -13,14 +13,9 @@ final familyMembersProvider =
   final family = await familyRepo.getFamilyById(familyId);
   if (family == null) return [];
   final authRepo = ref.read(authRepositoryProvider);
-  final members = <AppUser>[];
-  for (final id in family.memberIds) {
-    final user = await authRepo.getUserById(id);
-    if (user != null) {
-      members.add(user);
-    }
-  }
-  return members;
+  final futures = family.memberIds.map((id) => authRepo.getUserById(id));
+  final results = await Future.wait(futures);
+  return results.whereType<AppUser>().toList();
 });
 
 class FamilyDrawer extends ConsumerWidget {
@@ -315,7 +310,7 @@ class FamilyDrawer extends ConsumerWidget {
                           ),
                           if (isMemberCreator) ...[
                             const SizedBox(width: 4),
-                            const Icon(Icons.star, size: 16, color: Colors.amber),
+                            Icon(Icons.star, size: 16, color: Theme.of(context).colorScheme.primary),
                           ],
                           if (isCurrentUser) ...[
                             const SizedBox(width: 4),
