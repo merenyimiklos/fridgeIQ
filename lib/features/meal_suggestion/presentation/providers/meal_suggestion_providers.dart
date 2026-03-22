@@ -1,4 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fridgeiq/core/constants/app_constants.dart';
+import 'package:fridgeiq/features/family/presentation/providers/family_providers.dart';
 import 'package:fridgeiq/features/food_inventory/presentation/providers/food_inventory_providers.dart';
 import 'package:fridgeiq/features/meal_suggestion/data/datasources/recipe_local_data_source.dart';
 import 'package:fridgeiq/features/meal_suggestion/data/datasources/review_local_data_source.dart';
@@ -11,7 +13,14 @@ import 'package:fridgeiq/features/meal_suggestion/domain/repositories/recipe_rep
 import 'package:fridgeiq/features/meal_suggestion/domain/repositories/review_repository.dart';
 
 final recipeLocalDataSourceProvider = Provider<RecipeLocalDataSource>((ref) {
-  return RecipeLocalDataSource(ref.watch(firebaseDatabaseServiceProvider));
+  final familyId = ref.watch(currentFamilyIdProvider);
+  final collection = familyId != null
+      ? 'families/$familyId/${AppConstants.recipeBoxName}'
+      : AppConstants.recipeBoxName;
+  return RecipeLocalDataSource(
+    ref.watch(firebaseDatabaseServiceProvider),
+    collection,
+  );
 });
 
 final recipeRepositoryProvider = Provider<RecipeRepository>((ref) {
@@ -105,7 +114,14 @@ final recipeMatchesProvider = Provider<AsyncValue<List<RecipeMatch>>>((ref) {
 // Review providers
 
 final reviewLocalDataSourceProvider = Provider<ReviewLocalDataSource>((ref) {
-  return ReviewLocalDataSource(ref.watch(firebaseDatabaseServiceProvider));
+  final familyId = ref.watch(currentFamilyIdProvider);
+  final collection = familyId != null
+      ? 'families/$familyId/${AppConstants.reviewBoxName}'
+      : AppConstants.reviewBoxName;
+  return ReviewLocalDataSource(
+    ref.watch(firebaseDatabaseServiceProvider),
+    collection,
+  );
 });
 
 final reviewRepositoryProvider = Provider<ReviewRepository>((ref) {

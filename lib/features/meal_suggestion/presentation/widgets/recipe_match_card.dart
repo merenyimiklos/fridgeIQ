@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fridgeiq/core/constants/app_constants.dart';
 import 'package:fridgeiq/core/utils/ingredient_parser.dart';
+import 'package:fridgeiq/features/family/presentation/providers/family_providers.dart';
+import 'package:fridgeiq/features/food_inventory/presentation/providers/food_inventory_providers.dart';
+import 'package:fridgeiq/features/meal_suggestion/data/models/recipe_model.dart';
+import 'package:fridgeiq/features/meal_suggestion/domain/entities/recipe.dart';
 import 'package:fridgeiq/features/meal_suggestion/domain/entities/recipe_match.dart';
 import 'package:fridgeiq/features/meal_suggestion/domain/entities/recipe_review.dart';
 import 'package:fridgeiq/features/meal_suggestion/presentation/providers/meal_suggestion_providers.dart';
@@ -320,6 +325,8 @@ class RecipeMatchCard extends ConsumerWidget {
             _confirmDelete(context, ref);
           case 'review':
             _showAddReview(context);
+          case 'share':
+            _shareToFamily(context, ref);
         }
       },
       itemBuilder: (context) => [
@@ -337,6 +344,15 @@ class RecipeMatchCard extends ConsumerWidget {
           child: ListTile(
             leading: Icon(Icons.rate_review),
             title: Text('Write Review'),
+            contentPadding: EdgeInsets.zero,
+            dense: true,
+          ),
+        ),
+        const PopupMenuItem(
+          value: 'share',
+          child: ListTile(
+            leading: Icon(Icons.share),
+            title: Text('Share to Family'),
             contentPadding: EdgeInsets.zero,
             dense: true,
           ),
@@ -587,6 +603,98 @@ class RecipeMatchCard extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  void _shareToFamily(BuildContext context, WidgetRef ref) {
+    final familiesAsync = ref.read(userFamiliesProvider);
+    final currentFamilyId = ref.read(currentFamilyIdProvider);
+
+    familiesAsync.whenData((families) {
+      final otherFamilies =
+          families.where((f) => f.id != currentFamilyId).toList();
+      if (otherFamilies.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('You need to be in another family to share recipes'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        return;
+      }
+
+      showModalBottomSheet(
+        context: context,
+        builder: (context) => SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(
+                  'Share "${match.recipeName}" to:',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              ),
+              ...otherFamilies.map((family) => ListTile(
+                    leading: const Icon(Icons.family_restroom),
+                    title: Text(family.name),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _performShare(context, ref, family.id);
+                    },
+                  )),
+              const SizedBox(height: 8),
+            ],
+          ),
+        ),
+      );
+    });
+  }
+
+  void _performShare(BuildContext context, WidgetRef ref, String targetFamilyId) {
+    final recipesAsync = ref.read(recipesProvider);
+    recipesAsync.whenData((recipes) {
+      final recipe = recipes.where((r) => r.id == match.recipeId).firstOrNull;
+      if (recipe != null) {
+        final sharedRecipe = Recipe(
+          id: IdGenerator.generate(),
+          name: recipe.name,
+          mealType: recipe.mealType,
+          ingredients: List.from(recipe.ingredients),
+          instructions: recipe.instructions,
+          servings: recipe.servings,
+          prepTimeMinutes: recipe.prepTimeMinutes,
+        );
+
+        final firebaseService = ref.read(firebaseDatabaseServiceProvider);
+        final targetCollection =
+            'families/$targetFamilyId/${AppConstants.recipeBoxName}';
+        final model = RecipeModel.fromEntity(sharedRecipe);
+
+        firebaseService
+            .put(targetCollection, model.id, model.toMap())
+            .then((_) {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('"${recipe.name}" shared successfully!'),
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
+        }).catchError((e) {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Failed to share: $e'),
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
+        });
+      }
+    });
   }
 
   void _addMissingToShoppingList(BuildContext context, WidgetRef ref) {

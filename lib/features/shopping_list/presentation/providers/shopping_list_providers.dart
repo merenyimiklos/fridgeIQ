@@ -1,4 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fridgeiq/core/constants/app_constants.dart';
+import 'package:fridgeiq/features/family/presentation/providers/family_providers.dart';
 import 'package:fridgeiq/features/food_inventory/presentation/providers/food_inventory_providers.dart';
 import 'package:fridgeiq/features/shopping_list/data/datasources/shopping_local_data_source.dart';
 import 'package:fridgeiq/features/shopping_list/data/repositories/shopping_list_repository_impl.dart';
@@ -7,7 +9,14 @@ import 'package:fridgeiq/features/shopping_list/domain/repositories/shopping_lis
 
 final shoppingLocalDataSourceProvider =
     Provider<ShoppingLocalDataSource>((ref) {
-  return ShoppingLocalDataSource(ref.watch(firebaseDatabaseServiceProvider));
+  final familyId = ref.watch(currentFamilyIdProvider);
+  final collection = familyId != null
+      ? 'families/$familyId/${AppConstants.shoppingBoxName}'
+      : AppConstants.shoppingBoxName;
+  return ShoppingLocalDataSource(
+    ref.watch(firebaseDatabaseServiceProvider),
+    collection,
+  );
 });
 
 final shoppingListRepositoryProvider =

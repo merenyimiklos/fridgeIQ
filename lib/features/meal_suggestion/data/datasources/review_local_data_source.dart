@@ -1,13 +1,11 @@
-import 'package:fridgeiq/core/constants/app_constants.dart';
 import 'package:fridgeiq/core/services/firebase_database_service.dart';
 import 'package:fridgeiq/features/meal_suggestion/data/models/recipe_review_model.dart';
 
 class ReviewLocalDataSource {
   final FirebaseDatabaseService _firebaseService;
+  final String _collection;
 
-  ReviewLocalDataSource(this._firebaseService);
-
-  static const _collection = AppConstants.reviewBoxName;
+  ReviewLocalDataSource(this._firebaseService, this._collection);
 
   Future<List<RecipeReviewModel>> getAllReviews() async {
     final data = await _firebaseService.getAll(_collection);

@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fridgeiq/core/constants/app_constants.dart';
 import 'package:fridgeiq/core/services/firebase_database_service.dart';
 import 'package:fridgeiq/core/utils/date_utils.dart';
+import 'package:fridgeiq/features/family/presentation/providers/family_providers.dart';
 import 'package:fridgeiq/features/food_inventory/data/datasources/food_local_data_source.dart';
 import 'package:fridgeiq/features/food_inventory/data/repositories/food_inventory_repository_impl.dart';
 import 'package:fridgeiq/features/food_inventory/domain/entities/food_item.dart';
@@ -13,7 +14,14 @@ final firebaseDatabaseServiceProvider = Provider<FirebaseDatabaseService>((ref) 
 });
 
 final foodLocalDataSourceProvider = Provider<FoodLocalDataSource>((ref) {
-  return FoodLocalDataSource(ref.watch(firebaseDatabaseServiceProvider));
+  final familyId = ref.watch(currentFamilyIdProvider);
+  final collection = familyId != null
+      ? 'families/$familyId/${AppConstants.foodBoxName}'
+      : AppConstants.foodBoxName;
+  return FoodLocalDataSource(
+    ref.watch(firebaseDatabaseServiceProvider),
+    collection,
+  );
 });
 
 final foodInventoryRepositoryProvider =
