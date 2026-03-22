@@ -35,6 +35,14 @@ class FamilyDataSource {
     return map['familyId'] as String?;
   }
 
+  Future<void> deleteFamily(String id) async {
+    await _firebaseService.delete(_familiesCollection, id);
+  }
+
+  Future<void> deleteInviteCode(String code) async {
+    await _firebaseService.delete(_inviteCodesCollection, code);
+  }
+
   String generateInviteCode() {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     final random = Random.secure();

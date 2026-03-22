@@ -7,4 +7,6 @@ abstract class FamilyRepository {
   Future<List<Family>> getFamiliesForUser(List<String> familyIds);
   Future<void> updateFamily(Family family);
   Future<void> leaveFamily(String familyId, String userId);
+  Future<void> deleteFamily(String familyId);
+  Future<void> removeMember(String familyId, String userId);
 }
