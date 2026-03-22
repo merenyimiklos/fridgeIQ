@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart' hide Family;
 import 'package:fridgeiq/features/auth/presentation/providers/auth_providers.dart';
 import 'package:fridgeiq/features/family/presentation/providers/family_providers.dart';
 
