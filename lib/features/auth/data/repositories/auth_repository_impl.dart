@@ -115,7 +115,9 @@ class AuthRepositoryImpl implements AuthRepository {
       try {
         final userData = await authService.getUserData(idToken);
         emailVerified = userData['emailVerified'] as bool? ?? false;
-      } catch (_) {}
+      } catch (_) {
+        // Verification check failed; treat as unverified
+      }
     }
 
     // Look up or create user in RTDB
@@ -169,7 +171,9 @@ class AuthRepositoryImpl implements AuthRepository {
       // Send verification email
       try {
         await authService.sendEmailVerification(idToken);
-      } catch (_) {}
+      } catch (_) {
+        // Verification email failed to send; user can resend from verification screen
+      }
     }
 
     final newModel = AppUserModel(

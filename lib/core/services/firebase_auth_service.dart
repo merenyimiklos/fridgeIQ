@@ -101,6 +101,8 @@ class FirebaseAuthService {
       headers: {'Content-Type': 'application/json'},
       body: json.encode({
         'postBody': 'id_token=$idToken&providerId=google.com',
+        // requestUri is required by Firebase Auth REST API as a callback URI.
+        // For mobile/desktop apps, 'http://localhost' is the standard value.
         'requestUri': 'http://localhost',
         'returnSecureToken': true,
         'returnIdpCredential': true,
