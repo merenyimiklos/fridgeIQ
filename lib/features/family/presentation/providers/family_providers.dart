@@ -1,4 +1,4 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart' hide Family;
 import 'package:hive/hive.dart';
 import 'package:fridgeiq/core/constants/app_constants.dart';
 import 'package:fridgeiq/features/auth/presentation/providers/auth_providers.dart';
